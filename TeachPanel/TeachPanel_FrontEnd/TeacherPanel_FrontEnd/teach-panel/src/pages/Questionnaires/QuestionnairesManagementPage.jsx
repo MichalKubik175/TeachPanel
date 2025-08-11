@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Layout, Table, Typography, Spin, Empty, Button, Modal, Space, message, Popconfirm, Alert, Card, Divider } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, TeamOutlined, UserOutlined, FileTextOutlined, QuestionCircleOutlined, DownOutlined, RightOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, FileTextOutlined, QuestionCircleOutlined, DownOutlined, RightOutlined } from '@ant-design/icons';
 import { Formik, Form, Field, FieldArray } from 'formik';
 import * as Yup from 'yup';
 import { Form as AntForm, Input } from 'antd';
@@ -289,20 +289,6 @@ const QuestionnairesManagementPage = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                         <div></div>
                         <Space>
-                            <Button
-                                icon={<UserOutlined />}
-                                onClick={() => window.location.href = '/students'}
-                                size="large"
-                            >
-                                Керування студентами
-                            </Button>
-                            <Button
-                                icon={<TeamOutlined />}
-                                onClick={() => window.location.href = '/groups'}
-                                size="large"
-                            >
-                                Керування групами
-                            </Button>
                             <Button
                                 type="primary"
                                 icon={<PlusOutlined />}

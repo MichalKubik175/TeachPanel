@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Layout, Table, Typography, Spin, Empty, Card, Space, Button, Alert } from 'antd';
-import { UserOutlined, TrophyOutlined, SettingOutlined, TeamOutlined, FileTextOutlined, BookOutlined } from '@ant-design/icons';
+import { UserOutlined, TrophyOutlined, SettingOutlined, TeamOutlined, BookOutlined } from '@ant-design/icons';
 import StudentManagementPage from './StudentManagementPage.jsx';
 import BrandsManagementPage from '../Brands/BrandsManagementPage.jsx';
 import { useStudentsAndGroups } from '../../hooks/useStudentsAndGroups.js';
@@ -97,13 +97,6 @@ const StudentsOverviewPage = () => {
                         </Text>
                     </div>
                     <Space>
-                        <Button
-                            icon={<FileTextOutlined />}
-                            onClick={() => window.location.href = '/questionnaires'}
-                            size="large"
-                        >
-                            Керування опитуваннями
-                        </Button>
                         <Button
                             icon={<BookOutlined />}
                             onClick={() => setActivePanel('brands')}

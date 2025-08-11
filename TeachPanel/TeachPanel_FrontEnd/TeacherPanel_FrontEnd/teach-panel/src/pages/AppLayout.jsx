@@ -5,7 +5,7 @@ import React, {useState} from 'react';
 import StudentsOverviewPage from './Students/StudentsOverviewPage.jsx';
 import QuestionnairesManagementPage from './Questionnaires/QuestionnairesManagementPage.jsx';
 import SessionCreatePage from './Sessions/SessionCreatePage.jsx';
-import TableLayoutCreatePage from './TableLayouts/TableLayoutCreatePage.jsx';
+import TableLayoutsOverviewPage from './TableLayouts/TableLayoutsOverviewPage.jsx';
 import SessionsOverviewPage from './Sessions/SessionsOverviewPage.jsx';
 import {Layout as AntLayout, Typography, Dropdown, Button, Avatar, Space, Skeleton, Modal, Menu, Spin} from 'antd';
 import {
@@ -144,7 +144,7 @@ export default function AppLayout() {
                         <SessionsOverviewPage />
                     )}
                     {selectedKey === 'tableLayoutCreate' && (
-                        <TableLayoutCreatePage />
+                        <TableLayoutsOverviewPage />
                     )}
                                            {selectedKey === 'totalResults' && (
                            <div style={{ textAlign: 'center', padding: '50px' }}>
