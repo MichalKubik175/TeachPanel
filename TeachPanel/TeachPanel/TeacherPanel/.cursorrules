@@ -1,0 +1,164 @@
+# .NET Development Rules
+
+You are a senior .NET backend developer and an expert in C#, ASP.NET Core, and Entity Framework Core.
+
+## Code Style and Structure
+- Write concise, idiomatic C# code with accurate examples.
+- Follow .NET and ASP.NET Core conventions and best practices.
+- Use object-oriented and functional programming patterns as appropriate.
+- Prefer LINQ and lambda expressions for collection operations.
+- Use descriptive variable and method names (e.g., 'IsUserSignedIn', 'CalculateTotal').
+- Structure files according to .NET conventions (Controllers, Models, Services, etc.).
+
+## Naming Conventions
+- Use PascalCase for class names, method names, and public members.
+- Use camelCase for local variables and private fields.
+- Use UPPERCASE for constants.
+- Prefix interface names with "I" (e.g., 'IUserService').
+
+## C# and .NET Usage
+- Use C# 10+ features when appropriate (e.g., record types, pattern matching, null-coalescing assignment).
+- Leverage built-in ASP.NET Core features and middleware.
+- Use Entity Framework Core effectively for database operations.
+
+## Syntax and Formatting
+- Follow the C# Coding Conventions (https://docs.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions)
+- Use C#'s expressive syntax (e.g., null-conditional operators, string interpolation)
+- Use 'var' for implicit typing when the type is obvious.
+
+## Error Handling and Validation
+- Use exceptions for exceptional cases, not for control flow.
+- Implement proper error logging using built-in .NET logging or a third-party logger.
+- Use Data Annotations or Fluent Validation for model validation.
+- Implement global exception handling middleware.
+- Return appropriate HTTP status codes and consistent error responses.
+
+## API Design
+- Follow RESTful API design principles.
+- Use attribute routing in controllers.
+- Implement versioning for your API.
+- Use action filters for cross-cutting concerns.
+
+## Performance Optimization
+- Use asynchronous programming with async/await for I/O-bound operations.
+- Implement caching strategies using IMemoryCache or distributed caching.
+- Use efficient LINQ queries and avoid N+1 query problems.
+- Implement pagination for large data sets.
+
+## Key Conventions
+- Use Dependency Injection for loose coupling and testability.
+- Implement repository pattern or use Entity Framework Core directly, depending on the complexity.
+- Use AutoMapper for object-to-object mapping if needed.
+- Implement background tasks using IHostedService or BackgroundService.
+
+## Testing
+- Write unit tests using xUnit, NUnit, or MSTest.
+- Use Moq or NSubstitute for mocking dependencies.
+- Implement integration tests for API endpoints.
+
+## Security
+- Use Authentication and Authorization middleware.
+- Implement JWT authentication for stateless API authentication.
+- Use HTTPS and enforce SSL.
+- Implement proper CORS policies.
+
+## API Documentation
+- Use Swagger/OpenAPI for API documentation (as per installed Swashbuckle.AspNetCore package).
+- Provide XML comments for controllers and models to enhance Swagger documentation. Do not provide it for service methods, as they are not exposed to the API.
+
+Follow the official Microsoft documentation and ASP.NET Core guides for best practices in routing, controllers, models, and other API components.
+
+# Project specific rules
+
+Project & Microsoft Conventions
+1.1 Follow the existing solution folder structure and naming conventions.
+1.2 Place controller classes in the Controllers folder.
+1.3 Decorate API controllers with [ApiController] and [Route("api/[controller]")].
+1.4 Use PascalCase for class names, method names, and property names.
+1.5 Use camelCase for local variables and method parameters.
+1.6 Keep methods short (no more than 25 lines) and use expression-bodied members where appropriate.
+1.7 Seal classes that are not intended to be inherited by default.
+1.8 Do not write excessive comments; prefer self-documenting code.
+1.9 Prefer using domain static creation and update methods instead of constructors for domain entities.
+1.10 Always keep models/classes in separate files.
+
+Dependency Injection and Service Usage
+2.1 Resolve domain and user-related services through constructor injection.
+2.2 Program against interfaces (for example, IUserService or IWorkspaceService).
+2.3 Controllers must not contain business logic; all logic belongs in injected services.
+2.4 Use IOptions<T> for configuration settings and inject them into services.
+
+Security and Ownership Checks
+3.1 Before performing any operation, verify user permissions with AuthorizeWorkspaceAttribute.
+Usage examples:
+
+```csharp
+// To authorize access to a workspace member management endpoint with permission to manage members
+[AuthorizeWorkspace(WorkspaceIdLocation.Route, "workspaceId", Permission.ManageWorkspaceMembers)]
+```
+
+```csharp
+// To authorize access to a workspace endpoint without specific permission check
+[AuthorizeWorkspace(WorkspaceIdLocation.Route, "workspaceId")]
+```
+
+3.2 Confirm resource ownership using the membership data from ISecurityContext.UserId (or GetUserIdOrThrow method).
+3.3 Inject a user context service (ISecurityContext) into services.
+
+Request Models Location
+4.1 Store all request data transfer objects in the Application/Models folder.
+4.2 Name request models with the suffix "Request" (for example, CreateUserRequest) for the up-level models.
+Use suffix "Model" for down-level models (for example, UserModel which is property User inside of WorkspaceRequest).
+4.3 Use init-only properties to make request models immutable if applicable, otherwise use setter.
+
+Model Mappings
+5.1 Place mapping extension methods in ModelMappingExtensions.cs under the Application folder.
+5.2 Define static methods that map from request models to entity types, for example:
+public static User ToEntity(this CreateUserRequest request)
+{
+return new User { /* property mappings */ };
+}
+5.3 Only map whitelisted fields; do not bind ID or sensitive properties from requests.
+5.4 Use Riok.Mapperly source-generator to generate mapping code for request models to entities. It's placed in the Application/Mapping/EnumMapper.cs
+5.5 Prefer mapping in-place instead of mapping methods when mapping from request models to entities.
+5.6 Do not ever use Domain layer models inside the Application layer model or any other which is outside core layer of entity. Same for any models and enums.
+
+Validation Rules
+6.1 Use FluentValidation by creating validator classes that inherit AbstractValidator.
+6.2 Store validators in the Application/Validators folder, using subfolders to group by topic (for example, Users or Workspaces).
+6.3 Name validator classes Validator (for example, CreateUserRequestValidator).
+6.4 Define RuleFor() checks for property length, format, and any custom rules such as ownership requirements.
+6.5 All validators are automatically registered in the DI container. To request validation, use the IValidatorFactory service.
+
+Generated Code Checklist
+7.1 Verify that the class is in the correct folder.
+7.2 Verify that services and authorization are injected via DI.
+7.3 Verify that security and ownership checks are in place in controllers or services.
+7.4 Verify that the request model is located in Application/Models.
+7.5 Verify that the mapping method is added to ModelMappingExtensions.cs.
+7.6 Verify that the validator class is created and registered.
+
+Usage of the existing reusable solution components
+8.1 Use the existing solution components such as ISecurityContext, IValidatorFactory, and Riok.Mapperly for validation and mapping.
+8.2 Ensure that all API endpoints utilize the provided security context for user identification and authorization checks.
+8.3 Use PageFilter<T> on the service level to handle pagination and sorting of data.
+8.4 To dynamically filter data use the PredicateBuilder<T> class to build expression filter while filtering in EF.
+8.5 For paging request models inherit from PagingRequestModel and use the PageFilter<T> to apply pagination logic in services.
+8.6 For paging response models inherit from PagingResponseModel and use the PageFilter<T> to return paginated results.
+8.7 Consider moving common strings and constants to a dedicated Constants class or file to avoid duplication and improve maintainability.
+8.8 Use CollectionModel<T> for returning collections of models in API responses, which doesn't require pagination.
+
+Common sensical rules
+9.1 Always use the latest stable version of .NET and ASP.NET Core.
+9.2 Ensure that all API endpoints are documented using Swagger/OpenAPI using attributes.
+9.3 In case of unclear requirements or missing information, ask for clarification before proceeding with implementation.
+9.4. Do not ever hard-code sensitive information such as connection strings, API keys, or secrets in the codebase. Use appsettings.json or environment variables instead.
+
+Project specific rules
+10 Do not change PermissionModel.cs from enum to class. It's enum with Display attributes and need to be treated just as usual enum, do not replace it with class.
+10.1 Use DateTime in application layer models if entity have DateTimeOffset. Map it from offset using .UtcDateTime property.
+10.2 Prefer using of using just array of items over ICollection<T>, List<T> etc in the response and request models.
+10.3 Return CreatedAtUtc and UpdatedAtUtc (nullable) if applicable (if entity has it) while creating a model for entity and mapping it.
+10.4 As the result of API response, always should be json object or array. It's shouldn't be primitive (like just string/bool/int etc).
+
+This rule enforces consistency with existing project conventions, aligns with Microsoft best practices, and ensures security and validation are applied uniformly across the API.
