@@ -25,6 +25,7 @@ import {
     UserAddOutlined,
     FileTextOutlined,
     PlayCircleOutlined,
+    TrophyOutlined,
 } from '@ant-design/icons';
 import { clearTokens } from "../features/auth/tokenExpiry.js";
 import { logout as logoutAction } from "../features/auth/authSlice.js";
@@ -105,6 +106,7 @@ export default function AppLayout() {
         { key: 'questionnaires', icon: <FileTextOutlined />, label: 'Опитування' },
         { key: 'sessions', icon: <PlayCircleOutlined />, label: 'Сесії' },
         { key: 'tableLayoutCreate', icon: <ProjectOutlined />, label: 'Розкладки столів' },
+        { key: 'totalResults', icon: <TrophyOutlined />, label: 'Загальні результати' },
     ];
 
     // Determine which menu item is selected based on current route or state
@@ -144,6 +146,57 @@ export default function AppLayout() {
                     {selectedKey === 'tableLayoutCreate' && (
                         <TableLayoutCreatePage />
                     )}
+                                           {selectedKey === 'totalResults' && (
+                           <div style={{ textAlign: 'center', padding: '50px' }}>
+                               <TrophyOutlined style={{ fontSize: '64px', color: '#faad14', marginBottom: '24px' }} />
+                               <h2>Загальні результати студентів</h2>
+                               <p style={{ marginBottom: '24px' }}>
+                                   Оберіть потрібний режим перегляду результатів студентів. Обидві сторінки будуть автоматично оновлюватися при зміні балів студентів.
+                               </p>
+                               <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                   <Button 
+                                       type="primary" 
+                                       size="large" 
+                                       icon={<TrophyOutlined />}
+                                       onClick={() => window.open('/total-results', '_blank')}
+                                       style={{ minWidth: '200px' }}
+                                   >
+                                       Відкрити загальні результати
+                                   </Button>
+                                   <Button 
+                                       type="primary" 
+                                       size="large" 
+                                       icon={<TrophyOutlined />}
+                                       onClick={() => window.open('/public-showcase', '_blank')}
+                                       style={{ 
+                                           minWidth: '250px',
+                                           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+                                           border: 'none' 
+                                       }}
+                                   >
+                                       🏆 Відкрити публічну вітрину для аудиторії
+                                   </Button>
+                               </div>
+                               <div style={{ marginTop: '32px', display: 'flex', gap: '32px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                   <div style={{ textAlign: 'left', maxWidth: '300px' }}>
+                                       <h4 style={{ color: '#1890ff', marginBottom: '12px' }}>📊 Загальні результати</h4>
+                                       <ul style={{ color: '#666', fontSize: '14px', lineHeight: '1.6' }}>
+                                           <li>Детальна аналітика та фільтри</li>
+                                           <li>Таблична та ієрархічна структура</li>
+                                           <li>Інструменти управління даними</li>
+                                       </ul>
+                                   </div>
+                                   <div style={{ textAlign: 'left', maxWidth: '300px' }}>
+                                       <h4 style={{ color: '#764ba2', marginBottom: '12px' }}>🏆 Публічна вітрина</h4>
+                                       <ul style={{ color: '#666', fontSize: '14px', lineHeight: '1.6' }}>
+                                           <li>Оптимізовано для презентацій</li>
+                                           <li>Великий текст для аудиторії</li>
+                                           <li>Анімації при зміні результатів</li>
+                                       </ul>
+                                   </div>
+                               </div>
+                           </div>
+                       )}
                 </div>
             </Spin>
         );

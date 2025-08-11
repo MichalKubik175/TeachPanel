@@ -22,6 +22,8 @@ import AuthBootstrap from "./features/auth/AuthBootstrap.jsx";
 import SettingsPage from "./pages/Settings/SettingsPage.jsx";
 import StudentsOverviewPage from "./pages/Students/StudentsOverviewPage.jsx";
 import StudentManagementPage from "./pages/Students/StudentManagementPage.jsx";
+import TotalResultsPage from "./pages/TotalResults/TotalResultsPage.jsx";
+import PublicShowcasePage from "./pages/PublicShowcase/PublicShowcasePage.jsx";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +81,24 @@ const router = createBrowserRouter([
         element: (
             <PrivateRoute>
                 <SessionPage />
+            </PrivateRoute>
+        ),
+        errorElement: <ErrorFallback />,
+    },
+    {
+        path: 'total-results',
+        element: (
+            <PrivateRoute>
+                <TotalResultsPage />
+            </PrivateRoute>
+        ),
+        errorElement: <ErrorFallback />,
+    },
+    {
+        path: 'public-showcase',
+        element: (
+            <PrivateRoute>
+                <PublicShowcasePage />
             </PrivateRoute>
         ),
         errorElement: <ErrorFallback />,

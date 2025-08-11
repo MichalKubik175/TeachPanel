@@ -1,0 +1,191 @@
+/* Animation for score updates */
+@keyframes scoreUpdate {
+    0% {
+        transform: scale(1);
+        background-color: transparent;
+    }
+    50% {
+        transform: scale(1.05);
+        background-color: rgba(255, 193, 7, 0.2);
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
+    }
+    100% {
+        transform: scale(1);
+        background-color: transparent;
+    }
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+    }
+}
+
+.score-update-animation {
+    animation: scoreUpdate 2s ease-in-out, pulse 2s ease-in-out;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+/* Glow effect for new updates */
+@keyframes glow {
+    0% {
+        box-shadow: 0 0 5px rgba(82, 196, 26, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(82, 196, 26, 0.8);
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(82, 196, 26, 0.5);
+    }
+}
+
+.score-glow {
+    animation: glow 1.5s ease-in-out infinite;
+}
+
+/* Progress bar animations */
+.ant-progress-bg {
+    transition: all 0.5s ease-in-out;
+}
+
+/* Table row hover effects */
+.ant-table-tbody > tr:hover {
+    background-color: rgba(24, 144, 255, 0.05) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* Statistics cards hover */
+.ant-card {
+    transition: all 0.3s ease;
+}
+
+.ant-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Real-time indicator */
+.real-time-indicator {
+    position: relative;
+}
+
+.real-time-indicator::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -10px;
+    width: 6px;
+    height: 6px;
+    background-color: #52c41a;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Loading shimmer effect */
+@keyframes shimmer {
+    0% {
+        background-position: -468px 0;
+    }
+    100% {
+        background-position: 468px 0;
+    }
+}
+
+.shimmer {
+    background: linear-gradient(to right, #eff1f3 4%, #e2e2e2 25%, #eff1f3 36%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite linear;
+}
+
+/* Hierarchy view styles */
+.hierarchy-brand-panel .ant-collapse-header {
+    background: linear-gradient(135deg, #1890ff 0%, #69c0ff 100%);
+    color: white;
+    border-radius: 8px !important;
+    margin-bottom: 8px;
+}
+
+.hierarchy-group-panel .ant-collapse-header {
+    background: linear-gradient(135deg, #52c41a 0%, #95de64 100%);
+    color: white;
+    border-radius: 6px !important;
+    margin-bottom: 4px;
+}
+
+.hierarchy-student-card {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.hierarchy-student-card:hover {
+    border-color: #1890ff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(24, 144, 255, 0.2);
+}
+
+.hierarchy-student-card.top-performer {
+    border-color: #faad14;
+    background: linear-gradient(135deg, #fff7e6 0%, #fffbe6 100%);
+}
+
+.hierarchy-student-card.high-performer {
+    border-color: #52c41a;
+    background: linear-gradient(135deg, #f6ffed 0%, #f6ffed 100%);
+}
+
+/* Filter controls */
+.filter-controls .ant-segmented {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filter-controls .ant-select {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Statistics enhancement */
+.ant-statistic-title {
+    font-weight: 500;
+    color: #595959;
+}
+
+.ant-statistic-content {
+    color: #1890ff;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .hierarchy-student-card {
+        margin-bottom: 8px;
+    }
+    
+    .filter-controls .ant-col {
+        margin-bottom: 12px;
+    }
+}
+
+/* Brand/Group headers in hierarchy */
+.brand-header {
+    background: linear-gradient(135deg, #1890ff, #40a9ff);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.group-header {
+    background: linear-gradient(135deg, #52c41a, #73d13d);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
