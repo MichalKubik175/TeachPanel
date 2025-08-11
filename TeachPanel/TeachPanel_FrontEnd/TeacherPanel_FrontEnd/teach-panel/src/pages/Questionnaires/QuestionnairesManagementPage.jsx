@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Layout, Table, Typography, Spin, Empty, Button, Modal, Space, message, Popconfirm, Alert, Card, Divider } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, TeamOutlined, UserOutlined, FileTextOutlined, QuestionCircleOutlined, DownOutlined, RightOutlined } from '@ant-design/icons';
-import { Formik, Form, Field } from 'formik';
+import { Formik, Form, Field, FieldArray } from 'formik';
 import * as Yup from 'yup';
 import { Form as AntForm, Input } from 'antd';
 import { useQuestionnaires } from '../../hooks/useQuestionnaires';
@@ -17,7 +17,6 @@ const QuestionnairesManagementPage = () => {
     const [messageApi, contextHolder] = message.useMessage();
     const [questions, setQuestions] = useState([]);
     const [expandedRows, setExpandedRows] = useState(new Set());
-    const questionRefs = useRef({});
 
     const {
         questionnaires,
@@ -64,7 +63,7 @@ const QuestionnairesManagementPage = () => {
             // Transform the data to match backend API structure
             const questionnaireData = {
                 name: values.name,
-                questions: questions.filter(q => q.name.trim() && q.answer.trim()) // Only include questions with both name and answer
+                questions: (values.questions || []).filter(q => q.name?.trim() && q.answer?.trim()) // Only include questions with both name and answer
             };
             
             console.log('Sending questionnaire data:', questionnaireData);
@@ -100,28 +99,7 @@ const QuestionnairesManagementPage = () => {
         return new Date(dateString).toLocaleString();
     };
 
-    // Question management functions
-    const handleAddQuestion = () => {
-        const newQuestion = {
-            name: '',
-            answer: ''
-        };
-        setQuestions([...questions, newQuestion]);
-    };
 
-    const handleUpdateQuestion = (index, field, value) => {
-        const updatedQuestions = [...questions];
-        updatedQuestions[index] = {
-            ...updatedQuestions[index],
-            [field]: value
-        };
-        setQuestions(updatedQuestions);
-    };
-
-    const handleDeleteQuestion = (index) => {
-        const updatedQuestions = questions.filter((_, i) => i !== index);
-        setQuestions(updatedQuestions);
-    };
 
     const toggleExpandedRow = (questionnaireId) => {
         const newExpandedRows = new Set(expandedRows);
@@ -219,80 +197,87 @@ const QuestionnairesManagementPage = () => {
                 validateStatus={errors.name && touched.name ? 'error' : ''}
                 help={errors.name && touched.name ? errors.name : ''}
             >
-                <Input
-                    value={values.name || ''}
-                    onChange={(e) => setFieldValue('name', e.target.value)}
-                    placeholder="Введіть назву опитування"
-                    prefix={<FileTextOutlined />}
-                />
+                <Field name="name">
+                    {({ field }) => (
+                        <Input
+                            {...field}
+                            placeholder="Введіть назву опитування"
+                            prefix={<FileTextOutlined />}
+                        />
+                    )}
+                </Field>
             </AntForm.Item>
 
             <Divider orientation="left">Питання</Divider>
 
-            {questions.length > 0 && (
-                <div style={{ marginBottom: '16px' }}>
-                    {questions.map((question, index) => (
-                        <Card
-                            key={index}
-                            size="small"
-                            style={{ marginBottom: '8px' }}
-                            title={
-                                <Space>
-                                    <QuestionCircleOutlined />
-                                    <Text strong>Питання {index + 1}</Text>
-                                </Space>
-                            }
-                            extra={
-                                <Button
-                                    type="text"
-                                    danger
-                                    size="small"
-                                    icon={<DeleteOutlined />}
-                                    onClick={() => handleDeleteQuestion(index)}
-                                >
-                                    Видалити
-                                </Button>
-                            }
-                        >
-                            <div style={{ marginBottom: '8px' }}>
-                                <Text strong>Питання:</Text>
-                                <Input
-                                    defaultValue={question.name || ''}
-                                    onBlur={(e) => {
-                                        const newQuestions = [...questions];
-                                        newQuestions[index] = { ...newQuestions[index], name: e.target.value };
-                                        setQuestions(newQuestions);
-                                    }}
-                                    placeholder="Введіть питання"
-                                    style={{ marginTop: '4px' }}
-                                />
+            <FieldArray name="questions">
+                {({ push, remove }) => (
+                    <div>
+                        {values.questions && values.questions.length > 0 && (
+                            <div style={{ marginBottom: '16px' }}>
+                                {values.questions.map((question, index) => (
+                                    <Card
+                                        key={index}
+                                        size="small"
+                                        style={{ marginBottom: '8px' }}
+                                        title={
+                                            <Space>
+                                                <QuestionCircleOutlined />
+                                                <Text strong>Питання {index + 1}</Text>
+                                            </Space>
+                                        }
+                                        extra={
+                                            <Button
+                                                type="text"
+                                                danger
+                                                size="small"
+                                                icon={<DeleteOutlined />}
+                                                onClick={() => remove(index)}
+                                            >
+                                                Видалити
+                                            </Button>
+                                        }
+                                    >
+                                        <div style={{ marginBottom: '8px' }}>
+                                            <Text strong>Питання:</Text>
+                                            <Field name={`questions.${index}.name`}>
+                                                {({ field }) => (
+                                                    <Input
+                                                        {...field}
+                                                        placeholder="Введіть питання"
+                                                        style={{ marginTop: '4px' }}
+                                                    />
+                                                )}
+                                            </Field>
+                                        </div>
+                                        <div>
+                                            <Text strong>Відповідь:</Text>
+                                            <Field name={`questions.${index}.answer`}>
+                                                {({ field }) => (
+                                                    <Input
+                                                        {...field}
+                                                        placeholder="Введіть відповідь"
+                                                        style={{ marginTop: '4px' }}
+                                                    />
+                                                )}
+                                            </Field>
+                                        </div>
+                                    </Card>
+                                ))}
                             </div>
-                            <div>
-                                <Text strong>Відповідь:</Text>
-                                <Input
-                                    defaultValue={question.answer || ''}
-                                    onBlur={(e) => {
-                                        const newQuestions = [...questions];
-                                        newQuestions[index] = { ...newQuestions[index], answer: e.target.value };
-                                        setQuestions(newQuestions);
-                                    }}
-                                    placeholder="Введіть відповідь"
-                                    style={{ marginTop: '4px' }}
-                                />
-                            </div>
-                        </Card>
-                    ))}
-                </div>
-            )}
+                        )}
 
-            <Button
-                type="dashed"
-                icon={<PlusOutlined />}
-                onClick={handleAddQuestion}
-                style={{ width: '100%', marginBottom: '16px' }}
-            >
-                Додати питання
-            </Button>
+                        <Button
+                            type="dashed"
+                            icon={<PlusOutlined />}
+                            onClick={() => push({ name: '', answer: '' })}
+                            style={{ width: '100%', marginBottom: '16px' }}
+                        >
+                            Додати питання
+                        </Button>
+                    </div>
+                )}
+            </FieldArray>
         </div>
     );
 
@@ -422,9 +407,11 @@ const QuestionnairesManagementPage = () => {
                     <Formik
                         initialValues={{
                             name: editingQuestionnaire?.name || '',
+                            questions: questions.length > 0 ? questions : []
                         }}
                         validationSchema={validationSchema}
                         onSubmit={handleModalOk}
+                        enableReinitialize={true}
                     >
                         {({ values, errors, touched, isSubmitting, setFieldValue }) => (
                             <Form>

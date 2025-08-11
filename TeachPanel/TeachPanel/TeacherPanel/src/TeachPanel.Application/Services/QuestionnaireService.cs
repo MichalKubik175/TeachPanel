@@ -130,6 +130,37 @@ public sealed class QuestionnaireService : IQuestionnaireService
         questionnaire.UpdateInfo(request.Name);
         await _databaseContext.SaveChangesAsync();
 
+        // Handle questions update - similar to CreateAsync
+        if (request.Questions?.Any() == true)
+        {
+            // First, mark all existing questions as deleted
+            var existingQuestions = await _databaseContext.Questions
+                .Where(q => q.QuestionnaireId == id && !q.IsDeleted)
+                .ToListAsync();
+
+            foreach (var existingQuestion in existingQuestions)
+            {
+                existingQuestion.MarkAsDeleted();
+            }
+
+            // Then add new questions
+            foreach (var questionRequest in request.Questions)
+            {
+                var question = Question.Create(questionRequest.Name, questionRequest.Answer, questionnaire.Id);
+                _databaseContext.Questions.Add(question);
+            }
+            
+            await _databaseContext.SaveChangesAsync();
+        }
+
+        // Load questions separately to ensure they're included in the response
+        var questions = await _databaseContext.Questions
+            .Where(q => q.QuestionnaireId == questionnaire.Id && !q.IsDeleted)
+            .ToListAsync();
+
+        // Manually set the questions collection
+        questionnaire.Questions = questions;
+
         return questionnaire.ToQuestionnaireModel();
     }
 
