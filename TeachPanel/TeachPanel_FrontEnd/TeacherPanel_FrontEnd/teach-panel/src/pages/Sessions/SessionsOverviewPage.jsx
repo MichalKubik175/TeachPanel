@@ -27,7 +27,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const SessionSchema = Yup.object().shape({
-  name: Yup.string().required('Введіть назву сесії'),
+  name: Yup.string().required('Введіть назву уроку'),
   questionnaireId: Yup.string(),
   groupIds: Yup.array().of(Yup.string()),
   studentIds: Yup.array().of(Yup.string()),
@@ -50,7 +50,7 @@ const SessionsOverviewPage = () => {
         total: 0,
         showSizeChanger: true,
         showQuickJumper: true,
-        showTotal: (total, range) => `${range[0]}-${range[1]} з ${total} сесій`,
+        showTotal: (total, range) => `${range[0]}-${range[1]} з ${total} уроків`,
     });
 
     // Session creation form data
@@ -156,7 +156,7 @@ const SessionsOverviewPage = () => {
             }));
             setError(null);
         } catch (err) {
-            setError('Не вдалося завантажити сесії');
+            setError('Не вдалося завантажити уроки');
             console.error('Error fetching sessions:', err);
         } finally {
             setLoading(false);
@@ -186,29 +186,29 @@ const SessionsOverviewPage = () => {
             setEditingSession(sessionData);
             setIsEditModalVisible(true);
         } catch (err) {
-            message.error('Не вдалося завантажити дані сесії');
+            message.error('Не вдалося завантажити дані уроку');
         }
     };
 
     const handleDeleteSession = async (sessionId) => {
         try {
             await sessionsApi.deleteSession(sessionId);
-            message.success('Сесію видалено успішно! Дані збережено для звітності.');
+            message.success('Урок видалено успішно! Дані збережено для звітності.');
             fetchSessions(pagination.current, pagination.pageSize);
         } catch (err) {
             console.error('Error deleting session:', err);
             
             // Provide more specific error messages
             if (err.message && err.message.includes('not be implemented')) {
-                message.error('Функція видалення сесій ще не реалізована на сервері. Зверніться до адміністратора.');
+                message.error('Функція видалення уроків ще не реалізована на сервері. Зверніться до адміністратора.');
             } else if (err.response?.status === 404) {
-                message.error('Сесію не знайдено. Можливо, вона вже була видалена.');
+                message.error('Урок не знайдено. Можливо, він вже був видалений.');
                 // Refresh the list in case the session was already deleted
                 fetchSessions(pagination.current, pagination.pageSize);
             } else if (err.response?.status === 500) {
-                message.error('Помилка сервера при видаленні сесії. Спробуйте пізніше або зверніться до адміністратора.');
+                message.error('Помилка сервера при видаленні уроку. Спробуйте пізніше або зверніться до адміністратора.');
             } else {
-                message.error(`Не вдалося видалити сесію: ${err.message || 'Невідома помилка'}`);
+                message.error(`Не вдалося видалити урок: ${err.message || 'Невідома помилка'}`);
             }
         }
     };
@@ -318,7 +318,7 @@ const SessionsOverviewPage = () => {
             }
             
             console.log('Session creation process completed successfully');
-            message.success('Сесію створено успішно!');
+            message.success('Урок створено успішно!');
             resetForm();
             setIsModalVisible(false);
             fetchSessions(pagination.current, pagination.pageSize); // Refresh the current page
@@ -327,7 +327,7 @@ const SessionsOverviewPage = () => {
             console.error('Error details:', err);
             console.error('Error message:', err.message);
             console.error('Error stack:', err.stack);
-            message.error(err.message || 'Не вдалося створити сесію. Спробуйте ще раз.');
+            message.error(err.message || 'Не вдалося створити урок. Спробуйте ще раз.');
         } finally {
             console.log('=== handleModalOk finished ===');
             setSubmitting(false);
@@ -337,7 +337,7 @@ const SessionsOverviewPage = () => {
     const handleEditModalOk = async (values, { resetForm }) => {
         setSubmitting(true);
         try {
-            if (!editingSession) throw new Error('Сесія не знайдена');
+            if (!editingSession) throw new Error('Урок не знайдений');
             
             // Determine session state
             const state = values.questionnaireId ? 1 : 2; // 1 = Homework, 2 = Regular
@@ -350,13 +350,13 @@ const SessionsOverviewPage = () => {
                 currentSelectedSessionStudentId: editingSession.currentSelectedSessionStudentId,
             };
             await sessionsApi.updateSession(editingSession.id, payload);
-            message.success('Сесію оновлено успішно!');
+            message.success('Урок оновлено успішно!');
             resetForm();
             setIsEditModalVisible(false);
             setEditingSession(null);
             fetchSessions(pagination.current, pagination.pageSize); // Refresh the current page
         } catch (err) {
-            message.error(err.message || 'Не вдалося оновити сесію. Спробуйте ще раз.');
+            message.error(err.message || 'Не вдалося оновити урок. Спробуйте ще раз.');
         } finally {
             setSubmitting(false);
         }
@@ -407,7 +407,7 @@ const SessionsOverviewPage = () => {
 
     const columns = [
         {
-            title: 'Назва сесії',
+            title: 'Назва уроку',
             dataIndex: 'name',
             key: 'name',
             render: (text, record) => (
@@ -519,7 +519,7 @@ const SessionsOverviewPage = () => {
             key: 'actions',
             render: (_, record) => (
                 <Space>
-                    <Tooltip title="Почати сесію">
+                    <Tooltip title="Почати урок">
                         <Button 
                             type="text" 
                             icon={<PlayCircleOutlined />} 
@@ -536,8 +536,8 @@ const SessionsOverviewPage = () => {
                         />
                     </Tooltip>
                     <Popconfirm
-                        title="Видалити сесію"
-                        description="Ви впевнені, що хочете видалити цю сесію? Сесія буде позначена як видалена, але дані збережуться для звітності."
+                        title="Видалити урок"
+                        description="Ви впевнені, що хочете видалити цей урок? Урок буде позначений як видалений, але дані збережуться для звітності."
                         onConfirm={() => handleDeleteSession(record.id)}
                         okText="Так"
                         cancelText="Ні"
@@ -565,13 +565,13 @@ const SessionsOverviewPage = () => {
             <div>
                 {/* Session Name */}
                 <AntForm.Item
-                    label="Назва сесії"
+                    label="Назва уроку"
                     validateStatus={touched.name && errors.name ? 'error' : ''}
                     help={touched.name && errors.name}
                     required
                 >
                     <Field name="name">
-                        {({ field }) => <Input {...field} placeholder="Введіть назву сесії" autoFocus />}
+                        {({ field }) => <Input {...field} placeholder="Введіть назву уроку" autoFocus />}
                     </Field>
                 </AntForm.Item>
 
@@ -679,7 +679,7 @@ const SessionsOverviewPage = () => {
                 </AntForm.Item>
 
                 {/* Selected Students Preview */}
-                <Divider orientation="left">Всього студентів у сесії: {selectedStudentIds.length}</Divider>
+                <Divider orientation="left">Всього студентів в уроці: {selectedStudentIds.length}</Divider>
                 <Row gutter={[8, 8]}>
                     {selectedStudentIds.map(sid => {
                         const student = allStudents.find(s => s.id === sid);
@@ -699,13 +699,13 @@ const SessionsOverviewPage = () => {
             <div>
                 {/* Session Name */}
                 <AntForm.Item
-                    label="Назва сесії"
+                    label="Назва уроку"
                     validateStatus={touched.name && errors.name ? 'error' : ''}
                     help={touched.name && errors.name}
                     required
                 >
                     <Field name="name">
-                        {({ field }) => <Input {...field} placeholder="Введіть назву сесії" autoFocus />}
+                        {({ field }) => <Input {...field} placeholder="Введіть назву уроку" autoFocus />}
                     </Field>
                 </AntForm.Item>
 
@@ -735,7 +735,7 @@ const SessionsOverviewPage = () => {
                 </AntForm.Item>
 
                 {/* Session Type Info */}
-                <AntForm.Item label="Тип сесії">
+                <AntForm.Item label="Тип уроку">
                     <Text type="secondary">
                         {values.questionnaireId ? 'Домашня робота' : 'Звичайна'}
                     </Text>
@@ -767,9 +767,9 @@ const SessionsOverviewPage = () => {
             <Spin spinning={userData.status === 'loading' || loading} delay={500}>
                 <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <Title level={2}>Сесії</Title>
+                        <Title level={2}>Уроки</Title>
                         <Text type="secondary">
-                            Перегляд всіх створених сесій
+                            Перегляд всіх створених уроків
                         </Text>
                     </div>
                     <Space>
@@ -778,7 +778,7 @@ const SessionsOverviewPage = () => {
                             icon={<PlusOutlined />}
                             onClick={handleAddSession}
                         >
-                            Створити сесію
+                            Створити урок
                         </Button>
                     </Space>
                 </div>
@@ -792,14 +792,14 @@ const SessionsOverviewPage = () => {
                         onChange={handleTableChange}
                         loading={loading}
                         locale={{
-                            emptyText: <Empty description="Сесії не знайдено" />
+                            emptyText: <Empty description="Уроки не знайдено" />
                         }}
                         size="middle"
                     />
                 </Card>
 
                 <Modal
-                    title="Створити сесію"
+                    title="Створити урок"
                     open={isModalVisible}
                     onCancel={handleModalCancel}
                     footer={null}
@@ -836,7 +836,7 @@ const SessionsOverviewPage = () => {
                                             loading={submitting}
                                             disabled={loadingBGS || loadingQ || loadingTableLayouts}
                                         >
-                                            Створити сесію
+                                            Створити урок
                                         </Button>
                                     </Space>
                                 </div>
@@ -846,7 +846,7 @@ const SessionsOverviewPage = () => {
                 </Modal>
 
                 <Modal
-                    title="Редагувати сесію"
+                    title="Редагувати урок"
                     open={isEditModalVisible}
                     onCancel={handleEditModalCancel}
                     footer={null}
@@ -858,7 +858,7 @@ const SessionsOverviewPage = () => {
                             questionnaireId: editingSession?.questionnaireId || '',
                         }}
                         validationSchema={Yup.object().shape({
-                            name: Yup.string().required('Введіть назву сесії'),
+                            name: Yup.string().required('Введіть назву уроку'),
                             questionnaireId: Yup.string(),
                         })}
                         onSubmit={handleEditModalOk}
@@ -884,7 +884,7 @@ const SessionsOverviewPage = () => {
                                             loading={submitting}
                                             disabled={loadingQ}
                                         >
-                                            Оновити сесію
+                                            Оновити урок
                                         </Button>
                                     </Space>
                                 </div>

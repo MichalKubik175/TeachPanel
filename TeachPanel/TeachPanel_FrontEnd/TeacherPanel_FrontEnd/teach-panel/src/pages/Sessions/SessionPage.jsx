@@ -397,7 +397,7 @@ const SessionPage = () => {
                 }
             } catch (err) {
                 console.error('Error fetching session:', err);
-                setError('Сесія з таким ID не існує');
+                setError('Урок з таким ID не існує');
                 setSession(null);
                 
                 const timer = setInterval(() => {
@@ -737,7 +737,7 @@ const SessionPage = () => {
         const handleAutoAssignment = () => {
             Modal.confirm({
                 title: 'Автоматичне призначення',
-                content: `Ви впевнені, що хочете автоматично розподілити всіх студентів по столах для режиму "${currentState === 'Homework' ? 'Домашня робота' : 'Звичайна сесія'}"? Поточні призначення будуть скинуті.`,
+                content: `Ви впевнені, що хочете автоматично розподілити всіх студентів по столах для режиму "${currentState === 'Homework' ? 'Домашня робота' : 'Звичайний урок'}"? Поточні призначення будуть скинуті.`,
                 okText: 'Так, розподілити',
                 cancelText: 'Скасувати',
                 onOk: () => {
@@ -795,7 +795,7 @@ const SessionPage = () => {
                         }
                         
                         setAssignmentLoading(false);
-                        message.success(`Студентів автоматично розподілено по ${totalTables} столах (${currentState === 'Homework' ? 'Домашня робота' : 'Звичайна сесія'})`);
+                        message.success(`Студентів автоматично розподілено по ${totalTables} столах (${currentState === 'Homework' ? 'Домашня робота' : 'Звичайний урок'})`);
                     }, 500);
                 }
             });
@@ -1276,7 +1276,7 @@ const SessionPage = () => {
                                         Не призначено: {currentUnassigned.length} | 
                                         Столів: {tableStructure.reduce((sum, row) => sum + row.tables.length, 0)} |
                                         Режим: <Text type={currentState === 'Homework' ? 'primary' : 'success'}>
-                                            {currentState === 'Homework' ? 'Домашня робота' : 'Звичайна сесія'}
+                                            {currentState === 'Homework' ? 'Домашня робота' : 'Звичайний урок'}
                                         </Text>
                                     </Text>
                                 </Space>
@@ -1371,7 +1371,7 @@ const SessionPage = () => {
                     <Card style={{ maxWidth: 400, textAlign: 'center' }}>
                         <Space direction="vertical" size="large">
                             <Spin size="large" />
-                            <Text>Завантаження сесії...</Text>
+                            <Text>Завантаження уроку...</Text>
                         </Space>
                     </Card>
                 </div>
@@ -1392,7 +1392,7 @@ const SessionPage = () => {
                                 showIcon
                             />
                             <Text type="secondary">
-                                ID сесії: {id}
+                                ID уроку: {id}
                             </Text>
                         </Space>
                     </Card>
@@ -1418,7 +1418,7 @@ const SessionPage = () => {
                         <PlayCircleOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
                         <div>
                             <Title level={4} style={{ margin: 0 }}>
-                                {session?.name || 'Назва сесії'}
+                                {session?.name || 'Назва уроку'}
                             </Title>
                             <Text type="secondary" style={{ fontSize: '12px' }}>
                                 ID: {id}
@@ -1445,7 +1445,7 @@ const SessionPage = () => {
                                     label: (
                                         <Space>
                                             <BookOutlined />
-                                            Звичайна сесія
+                                            Звичайний урок
                                         </Space>
                                     ),
                                     value: 'Regular'
@@ -1459,7 +1459,7 @@ const SessionPage = () => {
                     {!hasQuestionnaire && (
                         <Space>
                             <BookOutlined style={{ color: '#52c41a' }} />
-                            <Text strong>Звичайна сесія</Text>
+                            <Text strong>Звичайний урок</Text>
                         </Space>
                     )}
                 </div>

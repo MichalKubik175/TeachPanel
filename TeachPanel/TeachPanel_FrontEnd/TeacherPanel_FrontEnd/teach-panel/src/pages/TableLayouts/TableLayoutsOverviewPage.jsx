@@ -218,7 +218,7 @@ const TableLayoutsOverviewPage = () => {
                     <div>
                         <Title level={2}>Розкладки столів</Title>
                         <Text type="secondary">
-                            Управління розкладками столів для сесій
+                            Управління розкладками столів для уроків
                         </Text>
                         {tableLayouts.length > 0 && (
                             <div style={{ marginTop: '8px' }}>

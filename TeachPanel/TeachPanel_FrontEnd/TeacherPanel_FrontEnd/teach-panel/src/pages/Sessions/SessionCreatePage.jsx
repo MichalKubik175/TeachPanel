@@ -27,7 +27,7 @@ const { Title } = Typography;
 const { Option } = Select;
 
 const SessionSchema = Yup.object().shape({
-  name: Yup.string().required('Введіть назву сесії'),
+  name: Yup.string().required('Введіть назву уроку'),
   questionnaireId: Yup.string(), // now optional
   groupIds: Yup.array().of(Yup.string()),
   studentIds: Yup.array().of(Yup.string()),
@@ -115,10 +115,10 @@ const SessionCreatePage = () => {
         commentaryId: null, // Add commentaryId if needed
       };
       await sessionsApi.createSession(payload);
-      message.success('Сесію створено успішно!');
+      message.success('Урок створено успішно!');
       resetForm();
     } catch (err) {
-      message.error(err.message || 'Не вдалося створити сесію. Спробуйте ще раз.');
+      message.error(err.message || 'Не вдалося створити урок. Спробуйте ще раз.');
     } finally {
       setSubmitting(false);
     }
@@ -133,7 +133,7 @@ const SessionCreatePage = () => {
 
   return (
     <Card style={{ maxWidth: 700, margin: '0 auto', marginTop: 24 }}>
-      <Title level={3}>Створити сесію</Title>
+      <Title level={3}>Створити урок</Title>
       <Formik
         initialValues={{
           name: '',
@@ -143,7 +143,7 @@ const SessionCreatePage = () => {
           tableLayoutId: '',
         }}
         validationSchema={Yup.object().shape({
-          name: Yup.string().required('Введіть назву сесії'),
+          name: Yup.string().required('Введіть назву уроку'),
           questionnaireId: Yup.string(),
           groupIds: Yup.array().of(Yup.string()),
           studentIds: Yup.array().of(Yup.string()),
@@ -159,13 +159,13 @@ const SessionCreatePage = () => {
             <Form autoComplete="off">
               {/* Session Name */}
               <AntForm.Item
-                label="Назва сесії"
+                label="Назва уроку"
                 validateStatus={touched.name && errors.name ? 'error' : ''}
                 help={touched.name && errors.name}
                 required
               >
                 <Field name="name">
-                  {({ field }) => <Input {...field} placeholder="Введіть назву сесії" autoFocus />}
+                  {({ field }) => <Input {...field} placeholder="Введіть назву уроку" autoFocus />}
                 </Field>
               </AntForm.Item>
 
@@ -273,7 +273,7 @@ const SessionCreatePage = () => {
               </AntForm.Item>
 
               {/* Selected Students Preview */}
-              <Divider orientation="left">Всього студентів у сесії: {selectedStudentIds.length}</Divider>
+              <Divider orientation="left">Всього студентів в уроці: {selectedStudentIds.length}</Divider>
               <Row gutter={[8, 8]}>
                 {selectedStudentIds.map(sid => {
                   const student = allStudents.find(s => s.id === sid);
@@ -294,9 +294,9 @@ const SessionCreatePage = () => {
                 size="large"
                 block
                 disabled={selectedStudentIds.length === 0}
-                aria-label="Створити сесію"
+                aria-label="Створити урок"
               >
-                Створити сесію
+                Створити урок
               </Button>
             </Form>
           );

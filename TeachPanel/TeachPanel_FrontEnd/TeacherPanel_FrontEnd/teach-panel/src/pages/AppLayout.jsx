@@ -104,7 +104,7 @@ export default function AppLayout() {
     const sideMenuItems = [
         { key: 'students', icon: <UserAddOutlined />,   label: 'Студенти' },
         { key: 'questionnaires', icon: <FileTextOutlined />, label: 'Опитування' },
-        { key: 'sessions', icon: <PlayCircleOutlined />, label: 'Сесії' },
+        { key: 'sessions', icon: <PlayCircleOutlined />, label: 'Уроки' },
         { key: 'tableLayoutCreate', icon: <ProjectOutlined />, label: 'Розкладки столів' },
         { key: 'totalResults', icon: <TrophyOutlined />, label: 'Загальні результати' },
     ];
