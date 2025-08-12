@@ -62,6 +62,15 @@ export const sessionsApi = {
             throw error;
         }
     },
+    deleteSession: async (id) => {
+        try {
+            const response = await api.delete(`/v1/sessions/${id}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error deleting session:', error);
+            throw error;
+        }
+    },
 };
 
 export default { sessionsApi }; 

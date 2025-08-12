@@ -22,6 +22,7 @@ public sealed class Session : AuditEntity<Guid>
     public Guid? CurrentSelectedQuestionId { get; set; }
     public Guid? CurrentSelectedSessionStudentId { get; set; }
     public DateTimeOffset CreatedAtLocal { get; set; }
+    public bool IsDeleted { get; set; }
     
     public ICollection<SessionHomeworkStudent> SessionHomeworkStudents { get; set; } = new List<SessionHomeworkStudent>();
     public ICollection<SessionRegularStudent> SessionRegularStudents { get; set; } = new List<SessionRegularStudent>();
@@ -50,5 +51,11 @@ public sealed class Session : AuditEntity<Guid>
         CommentaryId = commentaryId;
         CurrentSelectedQuestionId = currentSelectedQuestionId;
         CurrentSelectedSessionStudentId = currentSelectedSessionStudentId;
+    }
+
+    public void MarkAsDeleted()
+    {
+        IsDeleted = true;
+        DeletedAtUtc = DateTime.UtcNow;
     }
 } 

@@ -27,6 +27,10 @@ public sealed class SessionConfiguration : AuditEntityBaseConfiguration<Session,
         builder.Property(x => x.CreatedAtLocal)
             .IsRequired();
 
+        builder.Property(x => x.IsDeleted)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         // Foreign key relationships
         builder.HasOne(x => x.User)
             .WithMany()

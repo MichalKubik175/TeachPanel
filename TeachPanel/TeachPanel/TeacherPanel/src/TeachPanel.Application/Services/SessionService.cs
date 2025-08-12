@@ -91,7 +91,7 @@ public sealed class SessionService : ISessionService
                 .ThenInclude(shs => shs.Student)
             .Include(s => s.SessionRegularStudents)
                 .ThenInclude(srs => srs.Student)
-            .FirstOrDefaultAsync(s => s.Id == id && s.UserId == currentUserId);
+            .FirstOrDefaultAsync(s => s.Id == id && s.UserId == currentUserId && !s.IsDeleted);
 
         if (session is null)
         {
@@ -120,7 +120,7 @@ public sealed class SessionService : ISessionService
                 .ThenInclude(shs => shs.Student)
             .Include(s => s.SessionRegularStudents)
                 .ThenInclude(srs => srs.Student)
-            .Where(s => s.UserId == currentUserId)
+            .Where(s => s.UserId == currentUserId && !s.IsDeleted)
             .AsQueryable();
 
         var page = await pageFilter.ApplyToQueryable(query);
@@ -140,7 +140,7 @@ public sealed class SessionService : ISessionService
 
         var currentUserId = _securityContext.GetUserIdOrThrow();
         var session = await _context.Sessions
-            .FirstOrDefaultAsync(s => s.Id == id && s.UserId == currentUserId);
+            .FirstOrDefaultAsync(s => s.Id == id && s.UserId == currentUserId && !s.IsDeleted);
 
         if (session is null)
         {
@@ -188,14 +188,14 @@ public sealed class SessionService : ISessionService
     {
         var currentUserId = _securityContext.GetUserIdOrThrow();
         var session = await _context.Sessions
-            .FirstOrDefaultAsync(s => s.Id == id && s.UserId == currentUserId);
+            .FirstOrDefaultAsync(s => s.Id == id && s.UserId == currentUserId && !s.IsDeleted);
 
         if (session is null)
         {
             throw new ResourceNotFoundException($"Session with id {id} not found");
         }
 
-        _context.Sessions.Remove(session);
+        session.MarkAsDeleted();
         await _context.SaveChangesAsync();
     }
 
@@ -212,7 +212,7 @@ public sealed class SessionService : ISessionService
                 .ThenInclude(shs => shs.Student)
             .Include(s => s.SessionRegularStudents)
                 .ThenInclude(srs => srs.Student)
-            .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == currentUserId);
+            .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == currentUserId && !s.IsDeleted);
 
         return session.ToSessionModel();
     }

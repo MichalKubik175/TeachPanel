@@ -26,6 +26,8 @@ public sealed class SessionModel
     public DateTimeOffset CreatedAtLocal { get; set; }
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
     public List<SessionHomeworkStudentModel> SessionHomeworkStudents { get; set; } = new();
     public List<SessionRegularStudentModel> SessionRegularStudents { get; set; } = new();
 } 

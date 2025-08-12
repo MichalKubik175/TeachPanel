@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Layout, Table, Typography, Spin, Empty, Card, Space, Button, Alert, Tag, Tooltip, Modal } from 'antd';
+import { Layout, Table, Typography, Spin, Empty, Card, Space, Button, Alert, Tag, Tooltip, Modal, Popconfirm, message } from 'antd';
 import { 
     PlayCircleOutlined, 
     PauseCircleOutlined, 
@@ -10,11 +10,13 @@ import {
     FileTextOutlined, 
     CalendarOutlined,
     TeamOutlined,
-    PlusOutlined
+    PlusOutlined,
+    DeleteOutlined,
+    EditOutlined
 } from '@ant-design/icons';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
-import { Input, Select, Checkbox, Divider, Row, Col, Form as AntForm, message } from 'antd';
+import { Input, Select, Checkbox, Divider, Row, Col, Form as AntForm } from 'antd';
 import { sessionsApi } from '../../services/sessionsApi';
 import { tableLayoutsApi } from '../../services/tableLayoutsApi';
 import { useBrandsGroupsStudents } from '../../hooks/useBrandsGroupsStudents';
@@ -185,6 +187,29 @@ const SessionsOverviewPage = () => {
             setIsEditModalVisible(true);
         } catch (err) {
             message.error('Не вдалося завантажити дані сесії');
+        }
+    };
+
+    const handleDeleteSession = async (sessionId) => {
+        try {
+            await sessionsApi.deleteSession(sessionId);
+            message.success('Сесію видалено успішно! Дані збережено для звітності.');
+            fetchSessions(pagination.current, pagination.pageSize);
+        } catch (err) {
+            console.error('Error deleting session:', err);
+            
+            // Provide more specific error messages
+            if (err.message && err.message.includes('not be implemented')) {
+                message.error('Функція видалення сесій ще не реалізована на сервері. Зверніться до адміністратора.');
+            } else if (err.response?.status === 404) {
+                message.error('Сесію не знайдено. Можливо, вона вже була видалена.');
+                // Refresh the list in case the session was already deleted
+                fetchSessions(pagination.current, pagination.pageSize);
+            } else if (err.response?.status === 500) {
+                message.error('Помилка сервера при видаленні сесії. Спробуйте пізніше або зверніться до адміністратора.');
+            } else {
+                message.error(`Не вдалося видалити сесію: ${err.message || 'Невідома помилка'}`);
+            }
         }
     };
 
@@ -494,14 +519,6 @@ const SessionsOverviewPage = () => {
             key: 'actions',
             render: (_, record) => (
                 <Space>
-                    <Tooltip title="Редагувати">
-                        <Button 
-                            type="text" 
-                            icon={<FileTextOutlined />} 
-                            size="small"
-                            onClick={() => handleEditSession(record)}
-                        />
-                    </Tooltip>
                     <Tooltip title="Почати сесію">
                         <Button 
                             type="text" 
@@ -510,6 +527,31 @@ const SessionsOverviewPage = () => {
                             onClick={() => window.open(`/session/${record.id}`, '_blank')}
                         />
                     </Tooltip>
+                    <Tooltip title="Редагувати">
+                        <Button 
+                            type="text" 
+                            icon={<EditOutlined />} 
+                            size="small"
+                            onClick={() => handleEditSession(record)}
+                        />
+                    </Tooltip>
+                    <Popconfirm
+                        title="Видалити сесію"
+                        description="Ви впевнені, що хочете видалити цю сесію? Сесія буде позначена як видалена, але дані збережуться для звітності."
+                        onConfirm={() => handleDeleteSession(record.id)}
+                        okText="Так"
+                        cancelText="Ні"
+                        okType="danger"
+                    >
+                        <Tooltip title="Видалити">
+                            <Button 
+                                type="text" 
+                                danger
+                                icon={<DeleteOutlined />} 
+                                size="small"
+                            />
+                        </Tooltip>
+                    </Popconfirm>
                 </Space>
             ),
         },
