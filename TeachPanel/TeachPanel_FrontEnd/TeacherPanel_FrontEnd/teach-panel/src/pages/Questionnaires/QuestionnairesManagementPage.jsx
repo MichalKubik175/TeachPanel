@@ -23,6 +23,7 @@ const QuestionnairesManagementPage = () => {
         loading,
         error,
         pagination,
+        fetchQuestionnaires,
         createQuestionnaire,
         updateQuestionnaire,
         deleteQuestionnaire,
@@ -53,6 +54,8 @@ const QuestionnairesManagementPage = () => {
         try {
             await deleteQuestionnaire(questionnaireId);
             messageApi.success('Опитування успішно видалено');
+            // Refresh current page
+            fetchQuestionnaires(pagination.currentPage, pagination.pageSize);
         } catch (error) {
             messageApi.error('Не вдалося видалити опитування');
         }
@@ -82,6 +85,9 @@ const QuestionnairesManagementPage = () => {
             resetForm();
             setIsModalVisible(false);
             setQuestions([]);
+            
+            // Refresh current page
+            fetchQuestionnaires(pagination.currentPage, pagination.pageSize);
         } catch (error) {
             console.error('Error saving questionnaire:', error);
             setSubmitting(false);
@@ -375,7 +381,7 @@ const QuestionnairesManagementPage = () => {
                         showQuickJumper: true,
                         showTotal: (total, range) => `${range[0]}-${range[1]} з ${total} опитувань`,
                         onChange: (page, pageSize) => {
-                            // Handle pagination change
+                            fetchQuestionnaires(page, pageSize);
                         }
                     }}
                     locale={{
@@ -427,4 +433,5 @@ const QuestionnairesManagementPage = () => {
     );
 };
 
-export default QuestionnairesManagementPage; 
+export default QuestionnairesManagementPage;
+export { QuestionnairesManagementPage }; 

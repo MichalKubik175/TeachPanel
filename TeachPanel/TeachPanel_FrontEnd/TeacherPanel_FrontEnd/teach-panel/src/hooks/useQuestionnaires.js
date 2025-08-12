@@ -97,6 +97,7 @@ export const useQuestionnaires = () => {
     fetchQuestionnaires,
     createQuestionnaire,
     updateQuestionnaire,
-    deleteQuestionnaire
+    deleteQuestionnaire,
+    setError
   };
 }; 

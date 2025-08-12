@@ -41,13 +41,23 @@ const TableLayoutsOverviewPage = () => {
     const [activePanel, setActivePanel] = useState(null); // null | 'create' | 'edit'
     const [editingLayout, setEditingLayout] = useState(null);
     const [previewModal, setPreviewModal] = useState({ visible: false, layout: null });
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 10,
+        total: 0
+    });
 
     // Fetch table layouts
-    const fetchTableLayouts = async () => {
+    const fetchTableLayouts = async (page = 1, pageSize = 10) => {
         try {
             setLoading(true);
-            const response = await tableLayoutsApi.getAllTableLayouts(1, 100);
+            const response = await tableLayoutsApi.getAllTableLayouts(page, pageSize);
             setTableLayouts(response.items || []);
+            setPagination({
+                current: response.meta?.currentPage || page,
+                pageSize: pageSize,
+                total: response.meta?.totalItemsCount || response.totalCount || 0
+            });
             setError(null);
         } catch (err) {
             console.error('Error fetching table layouts:', err);
@@ -75,7 +85,7 @@ const TableLayoutsOverviewPage = () => {
         try {
             await tableLayoutsApi.deleteTableLayout(layoutId);
             message.success('Розкладку видалено успішно!');
-            fetchTableLayouts();
+            fetchTableLayouts(pagination.current, pagination.pageSize);
         } catch (err) {
             console.error('Error deleting table layout:', err);
             message.error('Не вдалося видалити розкладку');
@@ -89,7 +99,7 @@ const TableLayoutsOverviewPage = () => {
     const handleBack = () => {
         setActivePanel(null);
         setEditingLayout(null);
-        fetchTableLayouts(); // Refresh data when coming back
+        fetchTableLayouts(pagination.current, pagination.pageSize); // Refresh data when coming back
     };
 
     // Calculate total tables for a layout
@@ -264,11 +274,16 @@ const TableLayoutsOverviewPage = () => {
                             dataSource={tableLayouts}
                             rowKey="id"
                             pagination={{
-                                pageSize: 10,
+                                current: pagination.current,
+                                pageSize: pagination.pageSize,
+                                total: pagination.total,
                                 showSizeChanger: true,
                                 showQuickJumper: true,
                                 showTotal: (total, range) => 
                                     `${range[0]}-${range[1]} з ${total} розкладок`,
+                                onChange: (page, pageSize) => {
+                                    fetchTableLayouts(page, pageSize);
+                                }
                             }}
                             expandable={{
                                 expandedRowRender: (record) => (

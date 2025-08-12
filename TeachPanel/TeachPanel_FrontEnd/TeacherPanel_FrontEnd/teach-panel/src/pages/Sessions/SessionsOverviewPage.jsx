@@ -149,7 +149,8 @@ const SessionsOverviewPage = () => {
             setPagination(prev => ({
                 ...prev,
                 current: page,
-                total: response.totalCount || 0,
+                pageSize: pageSize,
+                total: response.meta?.totalItemsCount || response.totalCount || 0,
             }));
             setError(null);
         } catch (err) {
@@ -166,6 +167,11 @@ const SessionsOverviewPage = () => {
 
     const handleTableChange = (paginationInfo) => {
         fetchSessions(paginationInfo.current, paginationInfo.pageSize);
+        setPagination(prev => ({
+            ...prev,
+            current: paginationInfo.current,
+            pageSize: paginationInfo.pageSize
+        }));
     };
 
     const handleAddSession = () => {
@@ -290,7 +296,7 @@ const SessionsOverviewPage = () => {
             message.success('Сесію створено успішно!');
             resetForm();
             setIsModalVisible(false);
-            fetchSessions(); // Refresh the sessions list
+            fetchSessions(pagination.current, pagination.pageSize); // Refresh the current page
         } catch (err) {
             console.error('=== ERROR IN SESSION CREATION ===');
             console.error('Error details:', err);
@@ -323,7 +329,7 @@ const SessionsOverviewPage = () => {
             resetForm();
             setIsEditModalVisible(false);
             setEditingSession(null);
-            fetchSessions(); // Refresh the sessions list
+            fetchSessions(pagination.current, pagination.pageSize); // Refresh the current page
         } catch (err) {
             message.error(err.message || 'Не вдалося оновити сесію. Спробуйте ще раз.');
         } finally {
@@ -705,7 +711,7 @@ const SessionsOverviewPage = () => {
                     type="error"
                     showIcon
                     action={
-                        <Button size="small" onClick={() => fetchSessions()}>
+                        <Button size="small" onClick={() => fetchSessions(pagination.current, pagination.pageSize)}>
                             Спробувати знову
                         </Button>
                     }
