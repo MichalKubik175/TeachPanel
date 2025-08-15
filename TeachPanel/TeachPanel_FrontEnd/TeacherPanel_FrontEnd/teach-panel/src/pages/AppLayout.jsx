@@ -7,6 +7,7 @@ import QuestionnairesManagementPage from './Questionnaires/QuestionnairesManagem
 import SessionCreatePage from './Sessions/SessionCreatePage.jsx';
 import TableLayoutsOverviewPage from './TableLayouts/TableLayoutsOverviewPage.jsx';
 import SessionsOverviewPage from './Sessions/SessionsOverviewPage.jsx';
+import HomePage from './Home/HomePage.jsx';
 import {Layout as AntLayout, Typography, Dropdown, Button, Avatar, Space, Skeleton, Modal, Menu, Spin} from 'antd';
 import {
     KeyOutlined,
@@ -26,6 +27,7 @@ import {
     FileTextOutlined,
     PlayCircleOutlined,
     TrophyOutlined,
+    BarChartOutlined,
 } from '@ant-design/icons';
 import { clearTokens } from "../features/auth/tokenExpiry.js";
 import { logout as logoutAction } from "../features/auth/authSlice.js";
@@ -50,7 +52,7 @@ export default function AppLayout() {
     const isWorkspacelessLocation = workspacelessLocations.includes(location.pathname);
     
     const [collapsed, setCollapsed] = useState(false);
-    const [selectedMenuOption, setSelectedMenuOption] = useState('students');
+    const [selectedMenuOption, setSelectedMenuOption] = useState('dashboard');
 
     const logout = async () => {
         try {
@@ -102,6 +104,7 @@ export default function AppLayout() {
 
     // Side menu items for workspace
     const sideMenuItems = [
+        { key: 'dashboard', icon: <BarChartOutlined />, label: 'Дашборд' },
         { key: 'students', icon: <UserAddOutlined />,   label: 'Студенти' },
         { key: 'questionnaires', icon: <FileTextOutlined />, label: 'Опитування' },
         { key: 'sessions', icon: <PlayCircleOutlined />, label: 'Уроки' },
@@ -132,8 +135,11 @@ export default function AppLayout() {
 
         return (
             <Spin spinning={false} delay={500}>
-                <div style={{ padding: '24px' }}>
+                <div style={{ padding: selectedKey === 'dashboard' ? '0' : '24px' }}>
 
+                    {selectedKey === 'dashboard' && (
+                        <HomePage />
+                    )}
                     {selectedKey === 'students' && (
                         <StudentsOverviewPage />
                     )}
