@@ -11,6 +11,21 @@ const { Title, Text } = Typography;
 const SessionPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+
+    // Handle finish lesson
+    const handleFinishLesson = () => {
+        Modal.confirm({
+            title: 'Завершити урок',
+            content: 'Ви впевнені, що хочете завершити цей урок? Всі дані збережено.',
+            okText: 'Завершити',
+            okType: 'primary',
+            cancelText: 'Скасувати',
+            onOk: () => {
+                message.success('Урок успішно завершено!');
+                navigate('/');
+            }
+        });
+    };
     const [session, setSession] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -1591,42 +1606,55 @@ const SessionPage = () => {
                         </div>
                     </Space>
 
-                    {/* Right side - State Switcher (only if questionnaire exists) */}
-                    {hasQuestionnaire && (
-                        <Segmented
-                            value={currentState}
-                            onChange={handleStateChange}
-                            options={[
-                                {
-                                    label: (
-                                        <Space>
-                                            <FileTextOutlined />
-                                            Домашня робота
-                                        </Space>
-                                    ),
-                                    value: 'Homework'
-                                },
-                                {
-                                    label: (
-                                        <Space>
-                                            <BookOutlined />
-                                            Звичайний урок
-                                        </Space>
-                                    ),
-                                    value: 'Regular'
-                                }
-                            ]}
+                    {/* Right side - Controls */}
+                    <Space size="large">
+                        {/* State Switcher (only if questionnaire exists) */}
+                        {hasQuestionnaire && (
+                            <Segmented
+                                value={currentState}
+                                onChange={handleStateChange}
+                                options={[
+                                    {
+                                        label: (
+                                            <Space>
+                                                <FileTextOutlined />
+                                                Домашня робота
+                                            </Space>
+                                        ),
+                                        value: 'Homework'
+                                    },
+                                    {
+                                        label: (
+                                            <Space>
+                                                <BookOutlined />
+                                                Звичайний урок
+                                            </Space>
+                                        ),
+                                        value: 'Regular'
+                                    }
+                                ]}
+                                size="large"
+                            />
+                        )}
+                        
+                        {/* Show current state for regular sessions */}
+                        {!hasQuestionnaire && (
+                            <Space>
+                                <BookOutlined style={{ color: '#52c41a' }} />
+                                <Text strong>Звичайний урок</Text>
+                            </Space>
+                        )}
+
+                        {/* Finish Lesson Button */}
+                        <Button
+                            type="primary"
                             size="large"
-                        />
-                    )}
-                    
-                    {/* Show current state for regular sessions */}
-                    {!hasQuestionnaire && (
-                        <Space>
-                            <BookOutlined style={{ color: '#52c41a' }} />
-                            <Text strong>Звичайний урок</Text>
-                        </Space>
-                    )}
+                            onClick={handleFinishLesson}
+                            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                        >
+                            Завершити урок
+                        </Button>
+                    </Space>
                 </div>
 
                 {/* Main Content Area */}
