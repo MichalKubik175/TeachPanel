@@ -10,4 +10,5 @@ public interface ISessionService
     Task<PagingResponse<SessionModel>> GetAllAsync(PagingRequest request);
     Task<SessionModel> UpdateAsync(Guid id, UpdateSessionRequest request);
     Task DeleteAsync(Guid id);
+    Task<IEnumerable<StudentWithAnswersModel>> GetStudentsWithAnswersAsync(Guid sessionId);
 } 

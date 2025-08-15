@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TeachPanel.DataAccess.Connection;
 
@@ -10,9 +11,11 @@ using TeachPanel.DataAccess.Connection;
 namespace TeachPanel.DataAccess.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250814101449_RemoveBrandGroupAddBrandToStudent")]
+    partial class RemoveBrandGroupAddBrandToStudent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
@@ -68,6 +71,65 @@ namespace TeachPanel.DataAccess.Migrations
                         .HasDatabaseName("ix_brands_user_id");
 
                     b.ToTable("brands", (string)null);
+                });
+
+            modelBuilder.Entity("TeachPanel.Core.Models.Entities.BrandGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("brand_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtLocal")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("created_at_local");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset?>("DeletedAtUtc")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("deleted_at_utc");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("group_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("updated_by");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_brand_groups");
+
+                    b.HasIndex("GroupId")
+                        .HasDatabaseName("ix_brand_groups_group_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_brand_groups_user_id");
+
+                    b.HasIndex("BrandId", "GroupId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_brand_groups_brand_id_group_id");
+
+                    b.ToTable("brand_groups", (string)null);
                 });
 
             modelBuilder.Entity("TeachPanel.Core.Models.Entities.Commentary", b =>
@@ -883,6 +945,36 @@ namespace TeachPanel.DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_brands_users_user_id");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TeachPanel.Core.Models.Entities.BrandGroup", b =>
+                {
+                    b.HasOne("TeachPanel.Core.Models.Entities.Brand", "Brand")
+                        .WithMany()
+                        .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_brand_groups_brands_brand_id");
+
+                    b.HasOne("TeachPanel.Core.Models.Entities.Group", "Group")
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_brand_groups_groups_group_id");
+
+                    b.HasOne("TeachPanel.Core.Models.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_brand_groups_users_user_id");
+
+                    b.Navigation("Brand");
+
+                    b.Navigation("Group");
 
                     b.Navigation("User");
                 });

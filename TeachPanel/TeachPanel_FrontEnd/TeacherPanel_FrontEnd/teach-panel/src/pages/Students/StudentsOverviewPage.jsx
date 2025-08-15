@@ -4,6 +4,7 @@ import { Layout, Table, Typography, Spin, Empty, Card, Space, Button, Alert } fr
 import { UserOutlined, TrophyOutlined, SettingOutlined, TeamOutlined, BookOutlined } from '@ant-design/icons';
 import StudentManagementPage from './StudentManagementPage.jsx';
 import BrandsManagementPage from '../Brands/BrandsManagementPage.jsx';
+import GroupsManagementPage from '../Groups/GroupsManagementPage.jsx';
 import { useStudentsAndGroups } from '../../hooks/useStudentsAndGroups.js';
 
 const { Content } = Layout;
@@ -105,6 +106,13 @@ const StudentsOverviewPage = () => {
                             Керування брендами
                         </Button>
                         <Button
+                            icon={<TeamOutlined />}
+                            onClick={() => setActivePanel('groups')}
+                            size="large"
+                        >
+                            Керування групами
+                        </Button>
+                        <Button
                             type="primary"
                             icon={<SettingOutlined />}
                             onClick={() => setActivePanel('students')}
@@ -135,13 +143,26 @@ const StudentsOverviewPage = () => {
                     <BrandsManagementPage 
                         onBack={() => setActivePanel(null)}
                     />
+                ) : activePanel === 'groups' ? (
+                    <GroupsManagementPage 
+                        onBack={() => setActivePanel(null)}
+                    />
                 ) : (
                     <>
                         {groupedStudents.length === 0 && !loading ? (
                             <Empty 
                                 description="Групи не знайдено" 
                                 style={{ marginTop: '48px' }}
-                            />
+                                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            >
+                                <Button 
+                                    type="primary" 
+                                    icon={<TeamOutlined />}
+                                    onClick={() => setActivePanel('groups')}
+                                >
+                                    Створити групу
+                                </Button>
+                            </Empty>
                         ) : (
                             <div>
                                 {groupedStudents.map(renderGroupTable)}

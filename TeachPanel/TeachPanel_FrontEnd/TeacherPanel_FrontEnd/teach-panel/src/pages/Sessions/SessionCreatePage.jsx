@@ -15,16 +15,18 @@ import {
   Col,
   Card,
   Form as AntForm,
+  Collapse,
 } from 'antd';
 import { useBrandsGroupsStudents } from '../../hooks/useBrandsGroupsStudents';
 import { useQuestionnaires } from '../../hooks/useQuestionnaires';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, CloseOutlined } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 import { tableLayoutsApi } from '../../services/tableLayoutsApi';
 import { sessionsApi } from '../../services/sessionsApi';
 
 const { Title } = Typography;
 const { Option } = Select;
+const { Panel } = Collapse;
 
 const SessionSchema = Yup.object().shape({
   name: Yup.string().required('Введіть назву уроку'),
@@ -38,11 +40,10 @@ const SessionCreatePage = () => {
   const {
     brands,
     groups,
-    brandGroups,
     students,
     loading: loadingBGS,
     error: errorBGS,
-    getGroupsByBrand,
+    getStudentsByBrand,
   } = useBrandsGroupsStudents();
   const {
     questionnaires,
@@ -70,31 +71,33 @@ const SessionCreatePage = () => {
     fetchTableLayouts();
   }, []);
 
-  // Map groupId to students
+  // Map groupId to students (updated for new structure)
   const groupIdToStudents = useMemo(() => {
     const map = {};
     groups.forEach(group => {
-      map[group.id] = students.filter(s => s.group.id === group.id);
+      map[group.id] = students.filter(s => s.groupId === group.id);
     });
     return map;
   }, [groups, students]);
 
-  // Map brandId to groups
-  const brandIdToGroups = useMemo(() => {
-    const map = {};
-    brands.forEach(brand => {
-      map[brand.id] = getGroupsByBrand(brand.id);
-    });
-    return map;
-  }, [brands, getGroupsByBrand]);
+  // Groups are now independent, so we can use them directly
 
   // All students for multi-select
   const allStudents = students;
 
-  // Helper: get unique student IDs from selected groups and selected students
-  const getSelectedStudentIds = (groupIds, studentIds) => {
+  // Helper: get unique student IDs from selected groups (with individual selections) and selected students
+  const getSelectedStudentIds = (groupIds, studentIds, groupStudentSelections) => {
+    // Get students from selected groups (considering individual selections)
     const groupStudentIds = groupIds
-      .flatMap(gid => groupIdToStudents[gid]?.map(s => s.id) || []);
+      .flatMap(gid => {
+        if (groupStudentSelections[gid]) {
+          // Use individual selections for this group
+          return groupStudentSelections[gid];
+        } else {
+          // Use all students from the group (default behavior)
+          return groupIdToStudents[gid]?.map(s => s.id) || [];
+        }
+      });
     return Array.from(new Set([...groupStudentIds, ...studentIds]));
   };
 
@@ -140,6 +143,7 @@ const SessionCreatePage = () => {
           questionnaireId: '',
           groupIds: [],
           studentIds: [],
+          groupStudentSelections: {}, // { groupId: [studentId1, studentId2, ...] }
           tableLayoutId: '',
         }}
         validationSchema={Yup.object().shape({
@@ -153,7 +157,7 @@ const SessionCreatePage = () => {
       >
         {({ values, setFieldValue, errors, touched }) => {
           // Compute selected students
-          const selectedStudentIds = getSelectedStudentIds(values.groupIds, values.studentIds);
+          const selectedStudentIds = getSelectedStudentIds(values.groupIds, values.studentIds, values.groupStudentSelections);
 
           return (
             <Form autoComplete="off">
@@ -184,6 +188,8 @@ const SessionCreatePage = () => {
                       placeholder="Оберіть опитування (необов'язково)"
                       showSearch
                       optionFilterProp="children"
+                      allowClear
+                      style={{ width: '100%' }}
                     >
                       {questionnaires.map(q => (
                         <Option key={q.id} value={q.id}>{q.name}</Option>
@@ -218,33 +224,112 @@ const SessionCreatePage = () => {
                 </Field>
               </AntForm.Item>
 
-              {/* Groups by Brand */}
-              <Divider orientation="left">Групи за брендами</Divider>
-              {brands.length === 0 ? (
-                <Empty description="Немає брендів" />
+              {/* Groups Selection with Student Lists */}
+              <Divider orientation="left">Оберіть групи</Divider>
+              {/* Debug: Show groups data */}
+              <div style={{ padding: '8px', backgroundColor: '#f0f0f0', marginBottom: '16px', fontSize: '12px' }}>
+                <strong>Debug Info:</strong><br/>
+                Groups count: {groups.length}<br/>
+                Groups: {JSON.stringify(groups.map(g => ({ id: g.id, name: g.name })), null, 2)}<br/>
+                Students count: {students.length}<br/>
+                GroupIdToStudents: {JSON.stringify(Object.keys(groupIdToStudents).map(key => ({ 
+                  groupId: key, 
+                  studentCount: groupIdToStudents[key]?.length || 0 
+                })), null, 2)}
+              </div>
+              {groups.length === 0 ? (
+                <Empty description="Немає груп" />
               ) : (
-                <Checkbox.Group
-                  value={values.groupIds}
-                  onChange={checked => setFieldValue('groupIds', checked)}
-                  style={{ width: '100%' }}
-                >
-                  {brands.map(brand => (
-                    <div key={brand.id} style={{ marginBottom: 12 }}>
-                      <b>{brand.name}</b>
-                      <div style={{ marginLeft: 16, marginTop: 4 }}>
-                        {brandIdToGroups[brand.id]?.length ? (
-                          brandIdToGroups[brand.id].map(group => (
-                            <Checkbox key={group.id} value={group.id} style={{ marginRight: 12 }}>
-                              {group.name}
-                            </Checkbox>
-                          ))
-                        ) : (
-                          <span style={{ marginLeft: 8, color: '#aaa' }}>(немає груп)</span>
+                <div style={{ width: '100%' }}>
+                  {groups.map(group => {
+                    const groupStudents = groupIdToStudents[group.id] || [];
+                    const isGroupSelected = values.groupIds.includes(group.id);
+                    const selectedStudentsInGroup = values.groupStudentSelections[group.id] || [];
+                    
+                    const handleGroupToggle = (checked) => {
+                      if (checked) {
+                        // Add group to selected groups
+                        setFieldValue('groupIds', [...values.groupIds, group.id]);
+                        // Initially select all students in the group
+                        setFieldValue('groupStudentSelections', {
+                          ...values.groupStudentSelections,
+                          [group.id]: groupStudents.map(s => s.id)
+                        });
+                      } else {
+                        // Remove group from selected groups
+                        setFieldValue('groupIds', values.groupIds.filter(gid => gid !== group.id));
+                        // Remove student selections for this group
+                        const newSelections = { ...values.groupStudentSelections };
+                        delete newSelections[group.id];
+                        setFieldValue('groupStudentSelections', newSelections);
+                      }
+                    };
+
+                    const handleStudentToggle = (studentId, checked) => {
+                      const currentSelections = values.groupStudentSelections[group.id] || [];
+                      let newSelections;
+                      
+                      if (checked) {
+                        newSelections = [...currentSelections, studentId];
+                      } else {
+                        newSelections = currentSelections.filter(sid => sid !== studentId);
+                      }
+                      
+                      setFieldValue('groupStudentSelections', {
+                        ...values.groupStudentSelections,
+                        [group.id]: newSelections
+                      });
+                    };
+
+                    return (
+                      <Card 
+                        key={group.id} 
+                        size="small" 
+                        style={{ marginBottom: 16 }}
+                        title={
+                          <Checkbox
+                            checked={isGroupSelected}
+                            onChange={(e) => handleGroupToggle(e.target.checked)}
+                          >
+                            {group.name} ({groupStudents.length} студентів)
+                          </Checkbox>
+                        }
+                      >
+                        {isGroupSelected && (
+                          <div style={{ paddingLeft: 24 }}>
+                            <Row gutter={[8, 8]}>
+                              {groupStudents.map(student => {
+                                const brand = brands.find(b => b.id === student.brandId);
+                                const isStudentSelected = selectedStudentsInGroup.includes(student.id);
+                                
+                                return (
+                                  <Col key={student.id} span={12}>
+                                    <Checkbox
+                                      checked={isStudentSelected}
+                                      onChange={(e) => handleStudentToggle(student.id, e.target.checked)}
+                                    >
+                                      <span style={{ fontSize: '12px' }}>
+                                        {student.fullName}
+                                        <span style={{ color: '#888', marginLeft: 4 }}>
+                                          ({brand?.name || 'Без бренду'})
+                                        </span>
+                                      </span>
+                                    </Checkbox>
+                                  </Col>
+                                );
+                              })}
+                            </Row>
+                            {selectedStudentsInGroup.length !== groupStudents.length && (
+                              <div style={{ marginTop: 8, fontSize: '12px', color: '#888' }}>
+                                Обрано {selectedStudentsInGroup.length} з {groupStudents.length} студентів
+                              </div>
+                            )}
+                          </div>
                         )}
-                      </div>
-                    </div>
-                  ))}
-                </Checkbox.Group>
+                      </Card>
+                    );
+                  })}
+                </div>
               )}
 
               {/* Students Multi-Select */}
@@ -260,15 +345,28 @@ const SessionCreatePage = () => {
                   optionFilterProp="children"
                   showSearch
                 >
-                  {allStudents.map(student => (
-                    <Option
-                      key={student.id}
-                      value={student.id}
-                      disabled={values.groupIds.some(gid => groupIdToStudents[gid]?.some(s => s.id === student.id))}
-                    >
-                      {student.fullName} ({student.group?.name || '—'})
-                    </Option>
-                  ))}
+                  {allStudents.map(student => {
+                    const group = groups.find(g => g.id === student.groupId);
+                    const brand = brands.find(b => b.id === student.brandId);
+                    
+                    // Check if student is already selected through a group
+                    const isSelectedThroughGroup = values.groupIds.some(gid => {
+                      const groupSelections = values.groupStudentSelections[gid];
+                      return groupSelections ? groupSelections.includes(student.id) : 
+                             groupIdToStudents[gid]?.some(s => s.id === student.id);
+                    });
+                    
+                    return (
+                      <Option
+                        key={student.id}
+                        value={student.id}
+                        disabled={isSelectedThroughGroup}
+                      >
+                        {student.fullName} ({group?.name || '—'} - {brand?.name || 'Без бренду'})
+                        {isSelectedThroughGroup && <span style={{ color: '#888' }}> (вже обрано через групу)</span>}
+                      </Option>
+                    );
+                  })}
                 </Select>
               </AntForm.Item>
 
@@ -277,11 +375,19 @@ const SessionCreatePage = () => {
               <Row gutter={[8, 8]}>
                 {selectedStudentIds.map(sid => {
                   const student = allStudents.find(s => s.id === sid);
-                  return student ? (
+                  if (!student) return null;
+                  const group = groups.find(g => g.id === student.groupId);
+                  const brand = brands.find(b => b.id === student.brandId);
+                  return (
                     <Col key={sid} span={12}>
-                      <span>{student.fullName} <span style={{ color: '#888' }}>({student.group?.name || '—'})</span></span>
+                      <span>
+                        {student.fullName} 
+                        <span style={{ color: '#888' }}>
+                          ({group?.name || '—'} - {brand?.name || 'Без бренду'})
+                        </span>
+                      </span>
                     </Col>
-                  ) : null;
+                  );
                 })}
               </Row>
 

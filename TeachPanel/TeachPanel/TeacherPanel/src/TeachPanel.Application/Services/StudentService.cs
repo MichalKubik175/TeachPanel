@@ -51,20 +51,7 @@ public sealed class StudentService : IStudentService
             throw new ResourceNotFoundException($"Group with id {request.GroupId} not found");
         }
 
-        // Validate that the group belongs to the specified brand for this user
-        var brandGroupExists = await _databaseContext.BrandGroups
-            .AnyAsync(bg => bg.BrandId == request.BrandId && bg.GroupId == request.GroupId && bg.UserId == currentUserId);
-
-        if (!brandGroupExists)
-        {
-            throw new ValidationFailedException("Group does not belong to the specified brand",
-                new DetailsBuilder()
-                    .Add("brandId", request.BrandId.ToString())
-                    .Add("groupId", request.GroupId.ToString())
-                    .Build());
-        }
-
-        var student = Student.Create(request.FullName, request.GroupId, currentUserId);
+        var student = Student.Create(request.FullName, request.GroupId, request.BrandId, currentUserId);
         _databaseContext.Students.Add(student);
         await _databaseContext.SaveChangesAsync();
 
@@ -76,6 +63,7 @@ public sealed class StudentService : IStudentService
         var currentUserId = _securityContext.GetUserIdOrThrow();
         var student = await _databaseContext.Students
             .Include(s => s.Group)
+            .Include(s => s.Brand)
             .FirstOrDefaultAsync(s => s.Id == id && s.UserId == currentUserId);
 
         if (student is null)
@@ -97,23 +85,16 @@ public sealed class StudentService : IStudentService
 
         var query = _databaseContext.Students
             .Include(s => s.Group)
+            .Include(s => s.Brand)
             .Where(s => s.UserId == currentUserId)
             .AsQueryable();
         var page = await pageFilter.ApplyToQueryable(query);
         
-        // Get brand information and scores for each student's group
-        var studentsWithBrands = new List<StudentModel>();
+        // Get scores for each student
+        var studentsWithScores = new List<StudentModel>();
         foreach (var student in page.Items)
         {
-            var brandGroup = await _databaseContext.BrandGroups
-                .Include(bg => bg.Brand)
-                .FirstOrDefaultAsync(bg => bg.GroupId == student.GroupId && bg.UserId == currentUserId);
-            
             var studentModel = student.ToStudentModel();
-            if (brandGroup?.Brand != null)
-            {
-                studentModel.Group.Brand = brandGroup.Brand.ToBrandModel();
-            }
             
             // Calculate homework score
             var homeworkScore = await CalculateHomeworkScoreAsync(student.Id);
@@ -123,12 +104,12 @@ public sealed class StudentService : IStudentService
             var regularScore = await CalculateRegularScoreAsync(student.Id);
             studentModel.RegularScore = regularScore;
             
-            studentsWithBrands.Add(studentModel);
+            studentsWithScores.Add(studentModel);
         }
 
         return new PagingResponse<StudentModel>
         {
-            Items = studentsWithBrands.ToArray(),
+            Items = studentsWithScores.ToArray(),
             Meta = new PageMetadataModel(page.PageCount, page.PageNumber, page.ItemsCount)
         };
     }
@@ -164,20 +145,7 @@ public sealed class StudentService : IStudentService
             throw new ResourceNotFoundException($"Group with id {request.GroupId} not found");
         }
 
-        // Validate that the group belongs to the specified brand for this user
-        var brandGroupExists = await _databaseContext.BrandGroups
-            .AnyAsync(bg => bg.BrandId == request.BrandId && bg.GroupId == request.GroupId && bg.UserId == currentUserId);
-
-        if (!brandGroupExists)
-        {
-            throw new ValidationFailedException("Group does not belong to the specified brand",
-                new DetailsBuilder()
-                    .Add("brandId", request.BrandId.ToString())
-                    .Add("groupId", request.GroupId.ToString())
-                    .Build());
-        }
-
-        student.UpdateInfo(request.FullName, request.GroupId);
+        student.UpdateInfo(request.FullName, request.GroupId, request.BrandId);
         await _databaseContext.SaveChangesAsync();
 
         return student.ToStudentModel();
@@ -203,21 +171,12 @@ public sealed class StudentService : IStudentService
         var currentUserId = _securityContext.GetUserIdOrThrow();
         var student = await _databaseContext.Students
             .Include(s => s.Group)
+            .Include(s => s.Brand)
             .FirstOrDefaultAsync(s => s.Id == id && s.UserId == currentUserId);
 
         if (student == null) return null;
 
         var studentModel = student.ToStudentModel();
-        
-        // Get brand information for the student's group
-        var brandGroup = await _databaseContext.BrandGroups
-            .Include(bg => bg.Brand)
-            .FirstOrDefaultAsync(bg => bg.GroupId == student.GroupId && bg.UserId == currentUserId);
-        
-        if (brandGroup?.Brand != null)
-        {
-            studentModel.Group.Brand = brandGroup.Brand.ToBrandModel();
-        }
         
         // Calculate scores
         var homeworkScore = await CalculateHomeworkScoreAsync(student.Id);

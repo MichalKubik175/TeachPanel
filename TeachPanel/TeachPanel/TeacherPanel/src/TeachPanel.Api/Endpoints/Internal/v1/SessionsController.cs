@@ -70,4 +70,14 @@ public sealed class SessionsController : ApiControllerBase
         await _sessionService.DeleteAsync(id);
         return NoContent();
     }
+
+    [HttpGet("{id:guid}/students-with-answers")]
+    [Authorize]
+    [ProducesResponseType(typeof(IEnumerable<StudentWithAnswersModel>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetStudentsWithAnswersAsync(Guid id)
+    {
+        var response = await _sessionService.GetStudentsWithAnswersAsync(id);
+        return Ok(response);
+    }
 } 

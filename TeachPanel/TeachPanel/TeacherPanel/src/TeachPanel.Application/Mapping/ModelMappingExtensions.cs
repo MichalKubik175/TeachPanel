@@ -1,5 +1,4 @@
 ﻿using TeachPanel.Application.Models.Brands;
-using TeachPanel.Application.Models.BrandGroups;
 using TeachPanel.Application.Models.Commentaries;
 using TeachPanel.Application.Models.Groups;
 using TeachPanel.Application.Models.Questionnaires;
@@ -58,22 +57,7 @@ public static class ModelMappingExtensions
         };
     }
 
-    public static BrandGroupModel ToBrandGroupModel(this BrandGroup brandGroup)
-    {
-        ArgumentNullException.ThrowIfNull(brandGroup);
 
-        return new BrandGroupModel
-        {
-            Id = brandGroup.Id,
-            BrandId = brandGroup.BrandId,
-            Brand = brandGroup.Brand?.ToBrandModel(),
-            GroupId = brandGroup.GroupId,
-            Group = brandGroup.Group?.ToGroupModel(),
-            CreatedAtLocal = brandGroup.CreatedAtLocal,
-            CreatedAtUtc = brandGroup.CreatedAtUtc.UtcDateTime,
-            UpdatedAtUtc = brandGroup.UpdatedAtUtc?.UtcDateTime,
-        };
-    }
 
     public static CommentaryModel ToCommentaryModel(this Commentary commentary)
     {
@@ -215,6 +199,8 @@ public static class ModelMappingExtensions
             FullName = student.FullName,
             GroupId = student.GroupId,
             Group = student.Group?.ToGroupModel(),
+            BrandId = student.BrandId,
+            Brand = student.Brand?.ToBrandModel(),
             CreatedAtLocal = student.CreatedAtLocal,
             CreatedAtUtc = student.CreatedAtUtc.UtcDateTime,
             UpdatedAtUtc = student.UpdatedAtUtc?.UtcDateTime,

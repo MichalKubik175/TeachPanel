@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { studentsApi, groupsApi } from '../services/studentsApi.js';
-import { brandsApi, brandGroupsApi } from '../services/brandsApi.js';
+import { brandsApi } from '../services/brandsApi.js';
 
 export const useBrandsGroupsStudents = () => {
     const [students, setStudents] = useState([]);
     const [groups, setGroups] = useState([]);
     const [brands, setBrands] = useState([]);
-    const [brandGroups, setBrandGroups] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [pagination, setPagination] = useState({
@@ -30,20 +29,7 @@ export const useBrandsGroupsStudents = () => {
         }
     }, []);
 
-    // Fetch brand groups
-    const fetchBrandGroups = useCallback(async (page = 1, pageSize = 100) => {
-        try {
-            setLoading(true);
-            setError(null);
-            const response = await brandGroupsApi.getAllBrandGroups(page, pageSize);
-            setBrandGroups(response.items || []);
-        } catch (err) {
-            setError(err.message || 'Failed to fetch brand groups');
-            console.error('Error fetching brand groups:', err);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+
 
     // Fetch students
     const fetchStudents = useCallback(async (page = 1, pageSize = 10) => {
@@ -131,27 +117,22 @@ export const useBrandsGroupsStudents = () => {
         }
     }, []);
 
-    // Create group in brand
-    const createGroupInBrand = useCallback(async (brandId, groupName) => {
+    // Create group (now independent of brands)
+    const createGroup = useCallback(async (groupData) => {
         try {
             setLoading(true);
             setError(null);
-            const newBrandGroup = await brandGroupsApi.createGroupInBrand({
-                brandId,
-                groupName
-            });
-            // Refresh brand groups and groups
-            await fetchBrandGroups();
-            await fetchGroups();
-            return newBrandGroup;
+            const newGroup = await groupsApi.createGroup(groupData);
+            setGroups(prev => [...prev, newGroup]);
+            return newGroup;
         } catch (err) {
-            setError(err.message || 'Failed to create group in brand');
-            console.error('Error creating group in brand:', err);
+            setError(err.message || 'Failed to create group');
+            console.error('Error creating group:', err);
             throw err;
         } finally {
             setLoading(false);
         }
-    }, [fetchBrandGroups, fetchGroups]);
+    }, []);
 
     // Update group
     const updateGroup = useCallback(async (groupId, groupData) => {
@@ -236,40 +217,35 @@ export const useBrandsGroupsStudents = () => {
         }
     }, []);
 
-    // Get groups by brand
-    const getGroupsByBrand = useCallback((brandId) => {
-        return brandGroups
-            .filter(bg => bg.brandId === brandId)
-            .map(bg => groups.find(g => g.id === bg.groupId))
-            .filter(Boolean);
-    }, [brandGroups, groups]);
+    // Get students by brand (since students now have brandId directly)
+    const getStudentsByBrand = useCallback((brandId) => {
+        return students.filter(student => student.brandId === brandId);
+    }, [students]);
 
     // Initialize data
     useEffect(() => {
         fetchBrands();
-        fetchBrandGroups();
         fetchStudents();
         fetchGroups();
-    }, [fetchBrands, fetchBrandGroups, fetchStudents, fetchGroups]);
+    }, [fetchBrands, fetchStudents, fetchGroups]);
 
     return {
         students,
         groups,
         brands,
-        brandGroups,
         loading,
         error,
         pagination,
         createBrand,
         updateBrand,
         deleteBrand,
-        createGroupInBrand,
+        createGroup,
         updateGroup,
         deleteGroup,
         createStudent,
         updateStudent,
         deleteStudent,
-        getGroupsByBrand,
+        getStudentsByBrand,
         setError,
         fetchStudents
     };

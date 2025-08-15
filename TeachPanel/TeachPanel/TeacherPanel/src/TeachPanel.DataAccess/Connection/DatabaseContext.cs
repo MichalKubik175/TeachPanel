@@ -21,7 +21,6 @@ public class DatabaseContext : DbContext
     public DbSet<Question> Questions { get; set; }
     public DbSet<Brand> Brands { get; set; }
     public DbSet<Commentary> Commentaries { get; set; }
-    public DbSet<BrandGroup> BrandGroups { get; set; }
     public DbSet<TableLayout> TableLayouts { get; set; }
     public DbSet<Session> Sessions { get; set; }
     public DbSet<SessionHomeworkStudent> SessionHomeworkStudents { get; set; }

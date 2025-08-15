@@ -24,17 +24,16 @@ const BrandsManagementPage = ({ onBack, onSwitchToStudents }) => {
     const {
         brands,
         groups,
-        brandGroups,
         students,
         loading,
         error,
         createBrand,
         updateBrand,
         deleteBrand,
-        createGroupInBrand,
+        createGroup,
         updateGroup,
         deleteGroup,
-        getGroupsByBrand,
+        getStudentsByBrand,
         setError
     } = useBrandsGroupsStudents();
 
@@ -59,10 +58,7 @@ const BrandsManagementPage = ({ onBack, onSwitchToStudents }) => {
         setIsBrandModalVisible(true);
     };
 
-    const handleAddGroup = (brand) => {
-        setSelectedBrandForGroup(brand);
-        setIsGroupModalVisible(true);
-    };
+
 
     const handleEditBrand = (record) => {
         setEditingBrand(record);
@@ -78,20 +74,7 @@ const BrandsManagementPage = ({ onBack, onSwitchToStudents }) => {
         }
     };
 
-    const handleEditGroup = (brand, group) => {
-        setEditingGroup(group);
-        setEditingGroupBrand(brand);
-        setIsGroupModalVisible(true);
-    };
 
-    const handleDeleteGroup = async (group) => {
-        try {
-            await deleteGroup(group.id);
-            messageApi.success('Групу успішно видалено');
-        } catch (error) {
-            messageApi.error('Не вдалося видалити групу');
-        }
-    };
 
     const handleBrandModalOk = async (values, { setSubmitting, resetForm }) => {
         try {
@@ -119,8 +102,8 @@ const BrandsManagementPage = ({ onBack, onSwitchToStudents }) => {
                 await updateGroup(editingGroup.id, { name: values.groupName });
                 messageApi.success('Групу успішно оновлено');
             } else {
-                await createGroupInBrand(selectedBrandForGroup.id, values.groupName);
-                messageApi.success('Групу успішно додано до бренду');
+                await createGroup({ name: values.groupName });
+                messageApi.success('Групу успішно створено');
             }
             setSubmitting(false);
             resetForm();
@@ -235,9 +218,9 @@ const BrandsManagementPage = ({ onBack, onSwitchToStudents }) => {
                 ) : (
                     <Collapse defaultActiveKey={brands.map(b => b.id)}>
                         {brands.map((brand) => {
-                            const brandGroups = getGroupsByBrand(brand.id);
+                            // With the new structure, students have brandId directly
                             const studentsInBrand = students.filter(student => 
-                                student.group?.brand?.id === brand.id
+                                student.brandId === brand.id
                             );
 
                             return (
@@ -275,89 +258,55 @@ const BrandsManagementPage = ({ onBack, onSwitchToStudents }) => {
                                                 okText="Так"
                                                 cancelText="Ні"
                                                 onCancel={e => e.stopPropagation()}
-                                                disabled={brandGroups.length > 0}
+                                                disabled={studentsInBrand.length > 0}
                                             >
                                                 <Button
                                                     type="text"
                                                     danger
                                                     icon={<DeleteOutlined />}
                                                     size="small"
-                                                    disabled={brandGroups.length > 0}
+                                                    disabled={studentsInBrand.length > 0}
                                                 >
                                                     Видалити
                                                 </Button>
                                             </Popconfirm>
-                                            <Button
-                                                type="text"
-                                                icon={<PlusOutlined />}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleAddGroup(brand);
-                                                }}
-                                                size="small"
-                                            >
-                                                Додати групу
-                                            </Button>
                                         </Space>
                                     }
                                 >
-                                    {brandGroups.length === 0 ? (
-                                        <Empty description="Групи в бренді не знайдено" />
+                                    {studentsInBrand.length === 0 ? (
+                                        <Empty description="Студентів у цьому бренді не знайдено" />
                                     ) : (
                                         <div>
-                                            {brandGroups.map((group) => {
-                                                const studentsInGroup = students.filter(student => 
-                                                    student.groupId === group.id
-                                                );
-
-                                                return (
+                                            {/* Group students by their groups */}
+                                            {(() => {
+                                                const studentsByGroup = {};
+                                                studentsInBrand.forEach(student => {
+                                                    const group = groups.find(g => g.id === student.groupId);
+                                                    const groupName = group?.name || 'Невідома група';
+                                                    if (!studentsByGroup[groupName]) {
+                                                        studentsByGroup[groupName] = [];
+                                                    }
+                                                    studentsByGroup[groupName].push(student);
+                                                });
+                                                
+                                                return Object.entries(studentsByGroup).map(([groupName, groupStudents]) => (
                                                     <Card
-                                                        key={group.id}
+                                                        key={groupName}
                                                         title={
                                                             <Space>
                                                                 <TeamOutlined style={{ color: '#52c41a' }} />
-                                                                <Text strong>{group.name}</Text>
-                                                                <Text type="secondary">({studentsInGroup.length} студентів)</Text>
+                                                                <Text strong>{groupName}</Text>
+                                                                <Text type="secondary">({groupStudents.length} студентів)</Text>
                                                             </Space>
                                                         }
                                                         style={{ marginBottom: '16px' }}
                                                         size="small"
-                                                        extra={
-                                                            <Space>
-                                                                <Button
-                                                                    type="text"
-                                                                    icon={<EditOutlined />}
-                                                                    onClick={() => handleEditGroup(brand, group)}
-                                                                    size="small"
-                                                                >
-                                                                    Редагувати
-                                                                </Button>
-                                                                <Popconfirm
-                                                                    title="Видалити групу?"
-                                                                    description="Ви впевнені, що хочете видалити цю групу?"
-                                                                    onConfirm={() => handleDeleteGroup(group)}
-                                                                    okText="Так"
-                                                                    cancelText="Ні"
-                                                                    disabled={studentsInGroup.length > 0}
-                                                                >
-                                                                    <Button
-                                                                        type="text"
-                                                                        danger
-                                                                        icon={<DeleteOutlined />}
-                                                                        size="small"
-                                                                        disabled={studentsInGroup.length > 0}
-                                                                    >
-                                                                        Видалити
-                                                                    </Button>
-                                                                </Popconfirm>
-                                                            </Space>
-                                                        }
                                                     >
-                                                        {studentsInGroup.length > 0 ? (
+                                                        {groupStudents.length > 0 ? (
                                                             <div>
                                                                 <Text type="secondary">Студенти в групі:</Text>
                                                                 <ul style={{ marginTop: '8px' }}>
-                                                                    {studentsInGroup.map(student => (
+                                                                    {groupStudents.map(student => (
                                                                         <li key={student.id}>
                                                                             <Text>{student.fullName}</Text>
                                                                         </li>
@@ -368,8 +317,8 @@ const BrandsManagementPage = ({ onBack, onSwitchToStudents }) => {
                                                             <Text type="secondary">В групі немає студентів</Text>
                                                         )}
                                                     </Card>
-                                                );
-                                            })}
+                                                ));
+                                            })()}
                                         </div>
                                     )}
                                 </Collapse.Panel>

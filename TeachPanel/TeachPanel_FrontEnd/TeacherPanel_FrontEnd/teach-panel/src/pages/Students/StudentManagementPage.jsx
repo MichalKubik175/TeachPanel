@@ -26,14 +26,13 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
         students,
         groups,
         brands,
-        brandGroups,
         loading,
         error,
         pagination,
         createStudent,
         updateStudent,
         deleteStudent,
-        getGroupsByBrand,
+        getStudentsByBrand,
         setError
     } = useBrandsGroupsStudents();
 
@@ -243,41 +242,40 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
     const filteredStudents = useMemo(() => {
         if (!searchText.trim()) return students;
         
-        return students.filter(student => 
-            student.fullName.toLowerCase().includes(searchText.toLowerCase()) ||
-            student.group?.name?.toLowerCase().includes(searchText.toLowerCase()) ||
-            student.group?.brand?.name?.toLowerCase().includes(searchText.toLowerCase())
-        );
-    }, [students, searchText]);
+        return students.filter(student => {
+            const brand = brands.find(b => b.id === student.brandId);
+            const group = groups.find(g => g.id === student.groupId);
+            
+            return student.fullName.toLowerCase().includes(searchText.toLowerCase()) ||
+                   group?.name?.toLowerCase().includes(searchText.toLowerCase()) ||
+                   brand?.name?.toLowerCase().includes(searchText.toLowerCase());
+        });
+    }, [students, searchText, brands, groups]);
 
-    // Organize students by brand and group
-    const studentsByBrandAndGroup = useMemo(() => {
+    // Organize students by group
+    const studentsByGroup = useMemo(() => {
         const organized = {};
         
         filteredStudents.forEach(student => {
-            const brandName = student.group?.brand?.name || 'Без бренду';
-            const groupName = student.group?.name || 'Невідома група';
+            const group = groups.find(g => g.id === student.groupId);
+            const groupName = group?.name || 'Невідома група';
             
-            if (!organized[brandName]) {
-                organized[brandName] = {};
+            if (!organized[groupName]) {
+                organized[groupName] = [];
             }
             
-            if (!organized[brandName][groupName]) {
-                organized[brandName][groupName] = [];
-            }
-            
-            organized[brandName][groupName].push(student);
+            organized[groupName].push(student);
         });
         
         return organized;
-    }, [filteredStudents]);
+    }, [filteredStudents, groups]);
 
     const studentColumns = [
         {
             title: 'Ім\'я студента',
             dataIndex: 'fullName',
             key: 'fullName',
-            width: 200, // Make the name column wider
+            width: 180,
             render: (text) => (
                 <Space>
                     <UserOutlined style={{ color: '#1890ff' }} />
@@ -287,8 +285,28 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
             sorter: (a, b) => a.fullName.localeCompare(b.fullName),
         },
         {
+            title: 'Бренд',
+            key: 'brand',
+            width: 150,
+            render: (_, record) => {
+                const brand = brands.find(b => b.id === record.brandId);
+                return (
+                    <Space>
+                        <BookOutlined style={{ color: '#1890ff' }} />
+                        <Text>{brand?.name || 'Без бренду'}</Text>
+                    </Space>
+                );
+            },
+            sorter: (a, b) => {
+                const aBrand = brands.find(brand => brand.id === a.brandId)?.name || 'Без бренду';
+                const bBrand = brands.find(brand => brand.id === b.brandId)?.name || 'Без бренду';
+                return aBrand.localeCompare(bBrand);
+            },
+        },
+        {
             title: 'Загальний бал(Контрольні роботи)',
             key: 'homeworkScore',
+            width: 200,
             render: (_, record) => {
                 const scores = studentScores[record.id];
                 if (!scores) {
@@ -312,6 +330,7 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
         {
             title: 'Загальний бал(Заняття)',
             key: 'regularScore',
+            width: 180,
             render: (_, record) => {
                 const scores = studentScores[record.id];
                 if (!scores) {
@@ -335,6 +354,7 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
         {
             title: 'Ефективність(Контрольні)',
             key: 'homeworkEfficiency',
+            width: 150,
             render: (_, record) => {
                 const scores = studentScores[record.id];
                 if (!scores) {
@@ -361,6 +381,7 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
         {
             title: 'Ефективність(Заняття)',
             key: 'regularEfficiency',
+            width: 150,
             render: (_, record) => {
                 const scores = studentScores[record.id];
                 if (!scores) {
@@ -387,6 +408,7 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
         {
             title: 'Дії',
             key: 'actions',
+            width: 150,
             render: (_, record) => (
                 <Space>
                     <Button
@@ -419,8 +441,8 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
     ];
 
     const StudentForm = ({ values, setFieldValue, errors, touched, isSubmitting }) => {
-        // Get groups for the selected brand
-        const availableGroups = values.brandId ? getGroupsByBrand(values.brandId) : [];
+        // With the new structure, all groups are available regardless of brand
+        const availableGroups = groups;
 
         return (
             <div>
@@ -452,7 +474,7 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
                                 placeholder="Виберіть бренд"
                                 onChange={(value) => {
                                     setFieldValue('brandId', value);
-                                    setFieldValue('groupId', undefined); // Reset group when brand changes
+                                    // No need to reset group anymore since groups are independent
                                 }}
                             >
                                 {brands.map(brand => (
@@ -474,8 +496,7 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
                         {({ field }) => (
                             <Select
                                 {...field}
-                                placeholder={values.brandId ? "Виберіть групу" : "Спочатку виберіть бренд"}
-                                disabled={!values.brandId}
+                                placeholder="Виберіть групу"
                                 onChange={(value) => setFieldValue('groupId', value)}
                             >
                                 {availableGroups.map(group => (
@@ -525,9 +546,9 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
                             <div style={{ marginTop: '8px' }}>
                                 <Text type="secondary">
                                     {searchText ? (
-                                        `Знайдено: ${filteredStudents.length} з ${students.length} студентів в ${Object.keys(studentsByBrandAndGroup).length} брендах`
+                                        `Знайдено: ${filteredStudents.length} з ${students.length} студентів в ${Object.keys(studentsByGroup).length} групах`
                                     ) : (
-                                        `Всього: ${students.length} студентів в ${Object.keys(studentsByBrandAndGroup).length} брендах`
+                                        `Всього: ${students.length} студентів в ${Object.keys(studentsByGroup).length} групах`
                                     )}
                                 </Text>
                             </div>
@@ -558,29 +579,11 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
                     />
                 </div>
 
-                {Object.keys(studentsByBrandAndGroup).length === 0 ? (
+                {Object.keys(studentsByGroup).length === 0 ? (
                     <Empty description="Студентів не знайдено" />
                 ) : (
-                    <Collapse 
-                        defaultActiveKey={Object.keys(studentsByBrandAndGroup)}
-                        style={{ background: '#fff' }}
-                    >
-                        {Object.entries(studentsByBrandAndGroup).map(([brandName, groups]) => (
-                            <Collapse.Panel
-                                key={brandName}
-                                header={
-                                    <Space>
-                                        <BookOutlined style={{ color: '#1890ff' }} />
-                                        <Text strong style={{ fontSize: '16px' }}>{brandName}</Text>
-                                        <Text type="secondary">
-                                            ({Object.values(groups).flat().length} студентів)
-                                        </Text>
-                                    </Space>
-                                }
-                                style={{ border: '1px solid #f0f0f0', marginBottom: '8px' }}
-                            >
-                                <div style={{ padding: '8px 0' }}>
-                                    {Object.entries(groups).map(([groupName, groupStudents]) => (
+                    <div>
+                        {Object.entries(studentsByGroup).map(([groupName, groupStudents]) => (
                                         <Card
                                             key={groupName}
                                             title={
@@ -612,11 +615,8 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
                                                 }}
                                             />
                                         </Card>
-                                    ))}
-                                </div>
-                            </Collapse.Panel>
                         ))}
-                    </Collapse>
+                    </div>
                 )}
 
                 <Modal

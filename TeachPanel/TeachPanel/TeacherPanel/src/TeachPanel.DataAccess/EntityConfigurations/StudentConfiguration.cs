@@ -17,6 +17,9 @@ public sealed class StudentConfiguration : AuditEntityBaseConfiguration<Student,
         builder.Property(x => x.GroupId)
             .IsRequired();
 
+        builder.Property(x => x.BrandId)
+            .IsRequired();
+
         builder.Property(x => x.CreatedAtLocal)
             .IsRequired();
 
@@ -29,6 +32,12 @@ public sealed class StudentConfiguration : AuditEntityBaseConfiguration<Student,
             .HasForeignKey(x => x.GroupId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Configure foreign key relationship with Brand
+        builder.HasOne(x => x.Brand)
+            .WithMany()
+            .HasForeignKey(x => x.BrandId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Configure foreign key relationship with User
         builder.HasOne(x => x.User)
             .WithMany()
@@ -39,5 +48,6 @@ public sealed class StudentConfiguration : AuditEntityBaseConfiguration<Student,
         builder.HasIndex(x => x.FullName);
         builder.HasIndex(x => x.UserId);
         builder.HasIndex(x => x.GroupId);
+        builder.HasIndex(x => x.BrandId);
     }
 } 

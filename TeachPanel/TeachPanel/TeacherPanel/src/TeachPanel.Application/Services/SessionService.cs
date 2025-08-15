@@ -199,6 +199,61 @@ public sealed class SessionService : ISessionService
         await _context.SaveChangesAsync();
     }
 
+    public async Task<IEnumerable<StudentWithAnswersModel>> GetStudentsWithAnswersAsync(Guid sessionId)
+    {
+        var currentUserId = _securityContext.GetUserIdOrThrow();
+        
+        // First verify the session exists and belongs to the current user
+        var session = await _context.Sessions
+            .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == currentUserId && !s.IsDeleted);
+
+        if (session is null)
+        {
+            throw new ResourceNotFoundException($"Session with id {sessionId} not found");
+        }
+
+        // Get all students in the session with their answer counts
+        var studentsWithAnswers = await _context.SessionHomeworkStudents
+            .Where(shs => shs.SessionId == sessionId)
+            .Select(shs => new
+            {
+                StudentId = shs.StudentId,
+                Student = shs.Student,
+                HomeworkAnswerCount = _context.SessionHomeworkAnswers
+                    .Count(sha => sha.SessionHomeworkStudentId == shs.Id),
+                RegularAnswerCount = _context.SessionRegularAnswers
+                    .Where(sra => sra.SessionRegularStudent.SessionId == sessionId && 
+                                  sra.SessionRegularStudent.StudentId == shs.StudentId)
+                    .Count()
+            })
+            .Union(
+                _context.SessionRegularStudents
+                    .Where(srs => srs.SessionId == sessionId)
+                    .Where(srs => !_context.SessionHomeworkStudents
+                        .Any(shs => shs.SessionId == sessionId && shs.StudentId == srs.StudentId))
+                    .Select(srs => new
+                    {
+                        StudentId = srs.StudentId,
+                        Student = srs.Student,
+                        HomeworkAnswerCount = 0,
+                        RegularAnswerCount = _context.SessionRegularAnswers
+                            .Count(sra => sra.SessionRegularStudentId == srs.Id)
+                    })
+            )
+            .Where(s => s.HomeworkAnswerCount > 0 || s.RegularAnswerCount > 0)
+            .ToListAsync();
+
+        return studentsWithAnswers.Select(s => new StudentWithAnswersModel
+        {
+            StudentId = s.StudentId,
+            Student = s.Student?.ToStudentModel(),
+            HasHomeworkAnswers = s.HomeworkAnswerCount > 0,
+            HasRegularAnswers = s.RegularAnswerCount > 0,
+            HomeworkAnswerCount = s.HomeworkAnswerCount,
+            RegularAnswerCount = s.RegularAnswerCount
+        });
+    }
+
     private async Task<SessionModel> GetSessionWithIncludes(Guid sessionId)
     {
         var currentUserId = _securityContext.GetUserIdOrThrow();

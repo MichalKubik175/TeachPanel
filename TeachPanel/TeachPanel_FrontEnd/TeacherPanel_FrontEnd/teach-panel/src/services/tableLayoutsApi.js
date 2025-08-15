@@ -30,24 +30,6 @@ export const tableLayoutsApi = {
             throw error;
         }
     },
-    updateTableLayout: async (id, layoutData) => {
-        try {
-            const response = await api.put(`/v1/tablelayouts/${id}`, layoutData);
-            return response.data;
-        } catch (error) {
-            console.error('Error updating table layout:', error);
-            throw error;
-        }
-    },
-    deleteTableLayout: async (id) => {
-        try {
-            const response = await api.delete(`/v1/tablelayouts/${id}`);
-            return response.data;
-        } catch (error) {
-            console.error('Error deleting table layout:', error);
-            throw error;
-        }
-    },
 };
 
 export default { tableLayoutsApi }; 

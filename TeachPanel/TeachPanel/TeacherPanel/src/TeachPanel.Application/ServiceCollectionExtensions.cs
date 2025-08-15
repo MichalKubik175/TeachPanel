@@ -19,7 +19,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IQuestionnaireService, QuestionnaireService>();
         services.AddScoped<IQuestionService, QuestionService>();
         services.AddScoped<IBrandService, BrandService>();
-        services.AddScoped<IBrandGroupService, BrandGroupService>();
         services.AddScoped<ICommentaryService, CommentaryService>();
         services.AddScoped<ITableLayoutService, TableLayoutService>();
         services.AddScoped<ISessionService, SessionService>();

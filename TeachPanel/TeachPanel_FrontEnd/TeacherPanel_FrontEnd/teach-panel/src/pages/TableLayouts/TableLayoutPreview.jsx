@@ -66,3 +66,4 @@ const TableLayoutPreview = ({ layout, compact = false }) => {
 };
 
 export default TableLayoutPreview;
+

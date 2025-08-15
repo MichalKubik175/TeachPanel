@@ -12,7 +12,8 @@ import {
     TeamOutlined,
     PlusOutlined,
     DeleteOutlined,
-    EditOutlined
+    EditOutlined,
+    CloseOutlined
 } from '@ant-design/icons';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
@@ -44,6 +45,7 @@ const SessionsOverviewPage = () => {
     const [submitting, setSubmitting] = useState(false);
     const [editingSession, setEditingSession] = useState(null);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+    const [studentsWithAnswers, setStudentsWithAnswers] = useState(new Set()); // Track students who failed deletion
     const [pagination, setPagination] = useState({
         current: 1,
         pageSize: 10,
@@ -57,11 +59,10 @@ const SessionsOverviewPage = () => {
     const {
         brands,
         groups,
-        brandGroups,
         students,
         loading: loadingBGS,
         error: errorBGS,
-        getGroupsByBrand,
+        getStudentsByBrand,
     } = useBrandsGroupsStudents();
     const {
         questionnaires,
@@ -96,37 +97,44 @@ const SessionsOverviewPage = () => {
         fetchTableLayouts();
     }, []);
 
-    // Map groupId to students
+    // Map groupId to students (updated for new structure)
     const groupIdToStudents = useMemo(() => {
         const map = {};
         groups.forEach(group => {
-            map[group.id] = students.filter(s => s.group.id === group.id);
+            map[group.id] = students.filter(s => s.groupId === group.id);
         });
         return map;
     }, [groups, students]);
 
-    // Map brandId to groups
+    // Since groups are now independent of brands, all groups are available for all brands
     const brandIdToGroups = useMemo(() => {
         const map = {};
         brands.forEach(brand => {
-            map[brand.id] = getGroupsByBrand(brand.id);
+            map[brand.id] = groups; // All groups are available for each brand
         });
         return map;
-    }, [brands, getGroupsByBrand]);
+    }, [brands, groups]);
 
     // All students for multi-select
     const allStudents = students;
 
     // Helper: get unique student IDs from selected groups and selected students
-    const getSelectedStudentIds = (groupIds, studentIds) => {
-        console.log('getSelectedStudentIds called with:', { groupIds, studentIds });
+    const getSelectedStudentIds = (groupIds, studentIds, groupStudentSelections = {}) => {
+        console.log('getSelectedStudentIds called with:', { groupIds, studentIds, groupStudentSelections });
         console.log('groupIdToStudents:', groupIdToStudents);
         
         const groupStudentIds = groupIds
             .flatMap(gid => {
-                const studentsInGroup = groupIdToStudents[gid]?.map(s => s.id) || [];
-                console.log(`Students in group ${gid}:`, studentsInGroup);
-                return studentsInGroup;
+                if (groupStudentSelections[gid]) {
+                    // Use individual selections for this group
+                    console.log(`Group ${gid} using individual selections:`, groupStudentSelections[gid]);
+                    return groupStudentSelections[gid];
+                } else {
+                    // Use all students from the group (default behavior)
+                    const studentsInGroup = groupIdToStudents[gid]?.map(s => s.id) || [];
+                    console.log(`Students in group ${gid}:`, studentsInGroup);
+                    return studentsInGroup;
+                }
             });
         
         console.log('Group student IDs:', groupStudentIds);
@@ -185,6 +193,30 @@ const SessionsOverviewPage = () => {
             const sessionData = await sessionsApi.getSessionById(record.id);
             setEditingSession(sessionData);
             setIsEditModalVisible(true);
+            
+            // Fetch students with answers from backend
+            console.log('Fetching students with answers for session:', record.id);
+            try {
+                const studentsWithAnswersData = await sessionsApi.getSessionStudentsWithAnswers(record.id);
+                console.log('Students with answers data:', studentsWithAnswersData);
+                
+                // Extract student IDs from the response
+                const studentIdsWithAnswers = new Set();
+                if (studentsWithAnswersData && Array.isArray(studentsWithAnswersData)) {
+                    studentsWithAnswersData.forEach(studentData => {
+                        if (studentData.studentId) {
+                            studentIdsWithAnswers.add(studentData.studentId);
+                        }
+                    });
+                }
+                
+                console.log('Setting studentsWithAnswers:', Array.from(studentIdsWithAnswers));
+                setStudentsWithAnswers(studentIdsWithAnswers);
+            } catch (answersError) {
+                console.error('Error fetching students with answers:', answersError);
+                // If the API doesn't exist yet, just clear the set
+                setStudentsWithAnswers(new Set());
+            }
         } catch (err) {
             message.error('Не вдалося завантажити дані уроку');
         }
@@ -219,8 +251,10 @@ const SessionsOverviewPage = () => {
     };
 
     const handleEditModalCancel = () => {
+        console.log('Clearing studentsWithAnswers on modal cancel');
         setIsEditModalVisible(false);
         setEditingSession(null);
+        setStudentsWithAnswers(new Set()); // Clear tracked students when modal is closed
     };
 
     const handleModalOk = async (values, { resetForm }) => {
@@ -242,12 +276,11 @@ const SessionsOverviewPage = () => {
             // Determine session state
             const state = values.questionnaireId ? 1 : 2; // 1 = Homework, 2 = Regular
             const payload = {
-                name: values.name,
-                state,
-                userId: user.id,
-                questionnaireId: values.questionnaireId || null,
-                tableLayoutId: values.tableLayoutId,
-                commentaryId: null,
+                Name: values.name,
+                State: state,
+                QuestionnaireId: values.questionnaireId || null,
+                TableLayoutId: values.tableLayoutId,
+                CommentaryId: null,
             };
             
             console.log('Creating session with payload:', payload);
@@ -257,7 +290,7 @@ const SessionsOverviewPage = () => {
             console.log('Session created successfully:', createdSession);
             
             // Get selected student IDs
-            const selectedStudentIds = getSelectedStudentIds(values.groupIds, values.studentIds);
+            const selectedStudentIds = getSelectedStudentIds(values.groupIds, values.studentIds, values.groupStudentSelections);
             console.log('Selected student IDs:', selectedStudentIds);
             console.log('Selected student IDs length:', selectedStudentIds.length);
             
@@ -282,9 +315,9 @@ const SessionsOverviewPage = () => {
                     
                     // Always add to session_regular_students
                     const regularStudentData = {
-                        sessionId: createdSession.id,
-                        studentId: studentId,
-                        tableNumber: tableNumber
+                        SessionId: createdSession.id,
+                        StudentId: studentId,
+                        TableNumber: tableNumber
                     };
                     console.log('Adding to session_regular_students:', regularStudentData);
                     studentPromises.push(
@@ -294,9 +327,9 @@ const SessionsOverviewPage = () => {
                     // If questionnaire is selected, also add to session_homework_students
                     if (values.questionnaireId) {
                         const homeworkStudentData = {
-                            sessionId: createdSession.id,
-                            studentId: studentId,
-                            tableNumber: tableNumber
+                            SessionId: createdSession.id,
+                            StudentId: studentId,
+                            TableNumber: tableNumber
                         };
                         console.log('Adding to session_homework_students:', homeworkStudentData);
                         studentPromises.push(
@@ -339,23 +372,150 @@ const SessionsOverviewPage = () => {
         try {
             if (!editingSession) throw new Error('Урок не знайдений');
             
-            // Determine session state
+            console.log('=== handleEditModalOk called ===');
+            console.log('Values received:', values);
+            console.log('Editing session:', editingSession);
+            
+            // 1. Update session basic info
             const state = values.questionnaireId ? 1 : 2; // 1 = Homework, 2 = Regular
-            const payload = {
-                name: values.name,
-                state,
-                questionnaireId: values.questionnaireId || null,
-                commentaryId: editingSession.commentaryId,
-                currentSelectedQuestionId: editingSession.currentSelectedQuestionId,
-                currentSelectedSessionStudentId: editingSession.currentSelectedSessionStudentId,
+            const sessionPayload = {
+                Name: values.name,
+                State: state,
+                QuestionnaireId: values.questionnaireId || null,
+                CommentaryId: editingSession.commentaryId,
+                CurrentSelectedQuestionId: editingSession.currentSelectedQuestionId,
+                CurrentSelectedSessionStudentId: editingSession.currentSelectedSessionStudentId,
             };
-            await sessionsApi.updateSession(editingSession.id, payload);
+            await sessionsApi.updateSession(editingSession.id, sessionPayload);
+            console.log('Session updated successfully');
+
+            // 2. Handle student removals (preserve answers)
+            const studentsToRemove = values.studentsToRemove || [];
+            console.log('Students to remove:', studentsToRemove);
+            console.log('Current studentsWithAnswers:', Array.from(studentsWithAnswers));
+            
+            if (studentsToRemove.length > 0) {
+                console.log('Removing students from session...');
+                const removalPromises = [];
+                
+                studentsToRemove.forEach(studentId => {
+                    // Skip removal if student has answers
+                    if (studentsWithAnswers.has(studentId)) {
+                        console.log(`Skipping removal of student ${studentId} - has answers`);
+                        return;
+                    }
+                    
+                    console.log(`Processing removal for student ID: ${studentId}`);
+                    
+                    // Remove from homework students if exists
+                    const homeworkStudent = editingSession.sessionHomeworkStudents?.find(s => s.studentId === studentId);
+                    if (homeworkStudent) {
+                        console.log('Found homework student to remove:', homeworkStudent);
+                        removalPromises.push(
+                            sessionsApi.deleteSessionHomeworkStudent(homeworkStudent.id)
+                                .then(() => console.log(`Successfully removed homework student ${studentId}`))
+                                .catch(err => console.error(`Failed to remove homework student ${studentId}:`, err))
+                        );
+                    }
+                    
+                    // Remove from regular students if exists
+                    const regularStudent = editingSession.sessionRegularStudents?.find(s => s.studentId === studentId);
+                    if (regularStudent) {
+                        console.log('Found regular student to remove:', regularStudent);
+                        removalPromises.push(
+                            sessionsApi.deleteSessionRegularStudent(regularStudent.id)
+                                .then(() => console.log(`Successfully removed regular student ${studentId}`))
+                                .catch(err => console.error(`Failed to remove regular student ${studentId}:`, err))
+                        );
+                    }
+                });
+                
+                if (removalPromises.length > 0) {
+                    await Promise.all(removalPromises);
+                    console.log('Student removals completed');
+                }
+            }
+
+            // 3. Handle student additions
+            const selectedStudentIds = getSelectedStudentIds(values.groupIds, values.studentIds, values.groupStudentSelections);
+            console.log('New students to add:', selectedStudentIds);
+            
+            // Filter out students that are already in the session
+            const currentHomeworkStudents = editingSession.sessionHomeworkStudents || [];
+            const currentRegularStudents = editingSession.sessionRegularStudents || [];
+            const currentStudentIds = [
+                ...currentHomeworkStudents.map(s => s.studentId),
+                ...currentRegularStudents.map(s => s.studentId)
+            ];
+            const uniqueCurrentStudentIds = [...new Set(currentStudentIds)];
+            
+            // Only add students that are not already in the session and not being removed
+            const studentsToAdd = selectedStudentIds.filter(studentId => 
+                !uniqueCurrentStudentIds.includes(studentId) || studentsToRemove.includes(studentId)
+            );
+            
+            console.log('Current students in session:', uniqueCurrentStudentIds);
+            console.log('Students being removed:', studentsToRemove);
+            console.log('Filtered students to add:', studentsToAdd);
+            
+            if (studentsToAdd.length > 0) {
+                console.log('Adding new students to session...');
+                const additionPromises = [];
+                
+                studentsToAdd.forEach((studentId, index) => {
+                    const tableNumber = (index % 10) + 1; // Simple table assignment
+                    
+                    // Add to regular students (always)
+                    const regularStudentData = {
+                        SessionId: editingSession.id,
+                        StudentId: studentId,
+                        TableNumber: tableNumber
+                    };
+                    additionPromises.push(
+                        sessionsApi.createSessionRegularStudent(regularStudentData)
+                    );
+                    
+                    // Add to homework students if questionnaire is selected
+                    if (values.questionnaireId) {
+                        const homeworkStudentData = {
+                            SessionId: editingSession.id,
+                            StudentId: studentId,
+                            TableNumber: tableNumber
+                        };
+                        additionPromises.push(
+                            sessionsApi.createSessionHomeworkStudent(homeworkStudentData)
+                        );
+                    }
+                });
+                
+                await Promise.all(additionPromises);
+                console.log('Student additions completed');
+            } else {
+                console.log('No new students to add (all selected students are already in session)');
+            }
+
+            // Check if any students being removed have answers
+            const studentsWithAnswersBeingRemoved = studentsToRemove.filter(studentId => 
+                studentsWithAnswers.has(studentId)
+            );
+            
+            // Show appropriate success message
+            if (studentsWithAnswersBeingRemoved.length > 0) {
+                message.warning(`Урок оновлено. ${studentsWithAnswersBeingRemoved.length} студент(ів) не було видалено через наявність відповідей.`);
+            } else if (studentsToRemove.length > 0) {
+                message.success('Урок та студенти оновлені успішно!');
+            } else {
             message.success('Урок оновлено успішно!');
+            }
+            
             resetForm();
             setIsEditModalVisible(false);
             setEditingSession(null);
+            // Don't clear studentsWithAnswers here - let it persist until modal is reopened
             fetchSessions(pagination.current, pagination.pageSize); // Refresh the current page
+            console.log('=== handleEditModalOk finished ===');
         } catch (err) {
+            console.error('Error updating session:', err);
             message.error(err.message || 'Не вдалося оновити урок. Спробуйте ще раз.');
         } finally {
             setSubmitting(false);
@@ -615,6 +775,8 @@ const SessionsOverviewPage = () => {
                                 placeholder="Оберіть опитування (необов'язково)"
                                 showSearch
                                 optionFilterProp="children"
+                                allowClear
+                                style={{ width: '100%' }}
                             >
                                 {questionnaires.map(q => (
                                     <Option key={q.id} value={q.id}>{q.name}</Option>
@@ -624,33 +786,112 @@ const SessionsOverviewPage = () => {
                     </Field>
                 </AntForm.Item>
 
-                {/* Groups by Brand */}
-                <Divider orientation="left">Групи за брендами</Divider>
-                {brands.length === 0 ? (
-                    <Empty description="Немає брендів" />
+                {/* Groups Selection with Student Lists */}
+                <Divider orientation="left">Оберіть групи</Divider>
+                {/* Debug: Show groups data */}
+                <div style={{ padding: '8px', backgroundColor: '#f0f0f0', marginBottom: '16px', fontSize: '12px' }}>
+                  <strong>Debug Info:</strong><br/>
+                  Groups count: {groups.length}<br/>
+                  Groups: {JSON.stringify(groups.map(g => ({ id: g.id, name: g.name })), null, 2)}<br/>
+                  Students count: {allStudents.length}<br/>
+                  GroupIdToStudents: {JSON.stringify(Object.keys(groupIdToStudents).map(key => ({ 
+                    groupId: key, 
+                    studentCount: groupIdToStudents[key]?.length || 0 
+                  })), null, 2)}
+                </div>
+                {groups.length === 0 ? (
+                    <Empty description="Немає груп" />
                 ) : (
-                    <Checkbox.Group
-                        value={values.groupIds}
-                        onChange={checked => setFieldValue('groupIds', checked)}
-                        style={{ width: '100%' }}
-                    >
-                        {brands.map(brand => (
-                            <div key={brand.id} style={{ marginBottom: 12 }}>
-                                <b>{brand.name}</b>
-                                <div style={{ marginLeft: 16, marginTop: 4 }}>
-                                    {brandIdToGroups[brand.id]?.length ? (
-                                        brandIdToGroups[brand.id].map(group => (
-                                            <Checkbox key={group.id} value={group.id} style={{ marginRight: 12 }}>
-                                                {group.name}
-                                            </Checkbox>
-                                        ))
-                                    ) : (
-                                        <span style={{ marginLeft: 8, color: '#aaa' }}>(немає груп)</span>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </Checkbox.Group>
+                    <div style={{ width: '100%' }}>
+                      {groups.map(group => {
+                        const groupStudents = groupIdToStudents[group.id] || [];
+                        const isGroupSelected = values.groupIds.includes(group.id);
+                        const selectedStudentsInGroup = values.groupStudentSelections[group.id] || [];
+                        
+                        const handleGroupToggle = (checked) => {
+                          if (checked) {
+                            // Add group to selected groups
+                            setFieldValue('groupIds', [...values.groupIds, group.id]);
+                            // Initially select all students in the group
+                            setFieldValue('groupStudentSelections', {
+                              ...values.groupStudentSelections,
+                              [group.id]: groupStudents.map(s => s.id)
+                            });
+                          } else {
+                            // Remove group from selected groups
+                            setFieldValue('groupIds', values.groupIds.filter(gid => gid !== group.id));
+                            // Remove student selections for this group
+                            const newSelections = { ...values.groupStudentSelections };
+                            delete newSelections[group.id];
+                            setFieldValue('groupStudentSelections', newSelections);
+                          }
+                        };
+
+                        const handleStudentToggle = (studentId, checked) => {
+                          const currentSelections = values.groupStudentSelections[group.id] || [];
+                          let newSelections;
+                          
+                          if (checked) {
+                            newSelections = [...currentSelections, studentId];
+                          } else {
+                            newSelections = currentSelections.filter(sid => sid !== studentId);
+                          }
+                          
+                          setFieldValue('groupStudentSelections', {
+                            ...values.groupStudentSelections,
+                            [group.id]: newSelections
+                          });
+                        };
+
+                        return (
+                          <Card 
+                            key={group.id} 
+                            size="small" 
+                            style={{ marginBottom: 16 }}
+                            title={
+                              <Checkbox
+                                checked={isGroupSelected}
+                                onChange={(e) => handleGroupToggle(e.target.checked)}
+                              >
+                                {group.name} ({groupStudents.length} студентів)
+                              </Checkbox>
+                            }
+                          >
+                            {isGroupSelected && (
+                              <div style={{ paddingLeft: 24 }}>
+                                <Row gutter={[8, 8]}>
+                                  {groupStudents.map(student => {
+                                    const brand = brands.find(b => b.id === student.brandId);
+                                    const isStudentSelected = selectedStudentsInGroup.includes(student.id);
+                                    
+                                    return (
+                                      <Col key={student.id} span={12}>
+                                        <Checkbox
+                                          checked={isStudentSelected}
+                                          onChange={(e) => handleStudentToggle(student.id, e.target.checked)}
+                                        >
+                                          <span style={{ fontSize: '12px' }}>
+                                            {student.fullName}
+                                            <span style={{ color: '#888', marginLeft: 4 }}>
+                                              ({brand?.name || 'Без бренду'})
+                                            </span>
+                                          </span>
+                                        </Checkbox>
+                                      </Col>
+                                    );
+                                  })}
+                                </Row>
+                                {selectedStudentsInGroup.length !== groupStudents.length && (
+                                  <div style={{ marginTop: 8, fontSize: '12px', color: '#888' }}>
+                                    Обрано {selectedStudentsInGroup.length} з {groupStudents.length} студентів
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </Card>
+                        );
+                      })}
+                    </div>
                 )}
 
                 {/* Students Multi-Select */}
@@ -666,15 +907,28 @@ const SessionsOverviewPage = () => {
                         optionFilterProp="children"
                         showSearch
                     >
-                        {allStudents.map(student => (
-                            <Option
+                        {allStudents.map(student => {
+                            const group = groups.find(g => g.id === student.groupId);
+                            const brand = brands.find(b => b.id === student.brandId);
+                            
+                            // Check if student is already selected through a group
+                            const isSelectedThroughGroup = values.groupIds.some(gid => {
+                              const groupSelections = values.groupStudentSelections[gid];
+                              return groupSelections ? groupSelections.includes(student.id) : 
+                                     groupIdToStudents[gid]?.some(s => s.id === student.id);
+                            });
+                            
+                            return (
+                              <Option
                                 key={student.id}
                                 value={student.id}
-                                disabled={values.groupIds.some(gid => groupIdToStudents[gid]?.some(s => s.id === student.id))}
-                            >
-                                {student.fullName} ({student.group?.name || '—'})
-                            </Option>
-                        ))}
+                                disabled={isSelectedThroughGroup}
+                              >
+                                {student.fullName} ({group?.name || '—'} - {brand?.name || 'Без бренду'})
+                                {isSelectedThroughGroup && <span style={{ color: '#888' }}> (вже обрано через групу)</span>}
+                              </Option>
+                            );
+                        })}
                     </Select>
                 </AntForm.Item>
 
@@ -695,6 +949,19 @@ const SessionsOverviewPage = () => {
     };
 
     const EditSessionForm = ({ values, errors, touched, setFieldValue }) => {
+        // Get current students in the session
+        const currentHomeworkStudents = editingSession?.sessionHomeworkStudents || [];
+        const currentRegularStudents = editingSession?.sessionRegularStudents || [];
+        const currentStudentIds = [
+            ...currentHomeworkStudents.map(s => s.studentId),
+            ...currentRegularStudents.map(s => s.studentId)
+        ];
+        const uniqueCurrentStudentIds = [...new Set(currentStudentIds)];
+
+        // Compute selected students for preview
+        const selectedStudentIds = getSelectedStudentIds(values.groupIds, values.studentIds);
+        const allSelectedStudentIds = [...new Set([...uniqueCurrentStudentIds, ...selectedStudentIds])];
+
         return (
             <div>
                 {/* Session Name */}
@@ -725,6 +992,7 @@ const SessionsOverviewPage = () => {
                                 showSearch
                                 optionFilterProp="children"
                                 allowClear
+                                style={{ width: '100%' }}
                             >
                                 {questionnaires.map(q => (
                                     <Option key={q.id} value={q.id}>{q.name}</Option>
@@ -734,7 +1002,176 @@ const SessionsOverviewPage = () => {
                     </Field>
                 </AntForm.Item>
 
+                {/* Current Students */}
+                <Divider orientation="left">Поточні студенти в уроці</Divider>
+                <div style={{ marginBottom: 12, padding: 8, backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 4 }}>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                        💡 <strong>Підказка:</strong> Студенти з 📝 мають відповіді і не можуть бути видалені. 
+                        Дані про відповіді завантажуються з сервера при відкритті редагування.
+                    </Text>
+                </div>
+                {(() => {
+                    // Filter out students marked for removal
+                    const studentsToRemove = values.studentsToRemove || [];
+                    const displayedStudents = uniqueCurrentStudentIds.filter(studentId => 
+                        !studentsToRemove.includes(studentId)
+                    );
+                    
+                    return displayedStudents.length === 0 ? (
+                        <Empty description="Немає студентів в уроці" size="small" />
+                    ) : (
+                        <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
+                            {displayedStudents.map(studentId => {
+                                const student = allStudents.find(s => s.id === studentId);
+                                if (!student) return null;
+                                const group = groups.find(g => g.id === student.groupId);
+                                const brand = brands.find(b => b.id === student.brandId);
+                                
+                                // Check if this student is in our tracked set of students with answers
+                                // This set is populated when deletion attempts fail due to constraint errors
+                                const hasAnswers = studentsWithAnswers.has(studentId);
+                                console.log(`Student ${studentId} hasAnswers: ${hasAnswers}, studentsWithAnswers:`, Array.from(studentsWithAnswers));
+                                
+                                return (
+                                    <Col key={studentId} span={12}>
+                                        <Tag 
+                                            closable 
+                                            onClose={() => {
+                                                // Add to removal list (we'll handle this in submit)
+                                                const currentRemovals = values.studentsToRemove || [];
+                                                if (!currentRemovals.includes(studentId)) {
+                                                    setFieldValue('studentsToRemove', [...currentRemovals, studentId]);
+                                                }
+                                            }}
+                                            color={hasAnswers ? "orange" : "blue"}
+                                            title={hasAnswers ? "Цей студент може мати відповіді. Видалення може бути обмежено." : "Клікніть × щоб видалити"}
+                                        >
+                                            {student.fullName} ({group?.name || '—'} - {brand?.name || 'Без бренду'})
+                                            {hasAnswers && " 📝"}
+                                        </Tag>
+                                    </Col>
+                                );
+                            })}
+                        </Row>
+                    );
+                })()}
+
+                {/* Students Marked for Removal */}
+                {(() => {
+                    const studentsToRemove = values.studentsToRemove || [];
+                    if (studentsToRemove.length === 0) return null;
+                    
+                    return (
+                        <>
+                            <Divider orientation="left">Студенти для видалення: {studentsToRemove.length}</Divider>
+                            <Row gutter={[8, 8]} style={{ marginBottom: 16 }}>
+                                {studentsToRemove.map(studentId => {
+                                    const student = allStudents.find(s => s.id === studentId);
+                                    if (!student) return null;
+                                    const group = groups.find(g => g.id === student.groupId);
+                                    const brand = brands.find(b => b.id === student.brandId);
+                                    return (
+                                        <Col key={studentId} span={12}>
+                                            <Tag 
+                                                closable 
+                                                onClose={() => {
+                                                    // Remove from removal list (undo removal)
+                                                    const currentRemovals = values.studentsToRemove || [];
+                                                    const updatedRemovals = currentRemovals.filter(id => id !== studentId);
+                                                    setFieldValue('studentsToRemove', updatedRemovals);
+                                                }}
+                                                color="red"
+                                            >
+                                                {student.fullName} ({group?.name || '—'} - {brand?.name || 'Без бренду'})
+                                            </Tag>
+                                        </Col>
+                                    );
+                                })}
+                            </Row>
+                        </>
+                    );
+                })()}
+
+                {/* Groups Selection */}
+                <Divider orientation="left">Додати студентів за групами</Divider>
+                {groups.length === 0 ? (
+                    <Empty description="Немає груп" />
+                ) : (
+                    <Checkbox.Group
+                        value={values.groupIds}
+                        onChange={checked => setFieldValue('groupIds', checked)}
+                        style={{ width: '100%' }}
+                    >
+                        <Row gutter={[16, 8]}>
+                            {groups.map(group => (
+                                <Col key={group.id} span={8}>
+                                    <Checkbox value={group.id} style={{ marginBottom: 8 }}>
+                                        {group.name} ({groupIdToStudents[group.id]?.length || 0} студентів)
+                                    </Checkbox>
+                                </Col>
+                            ))}
+                        </Row>
+                    </Checkbox.Group>
+                )}
+
+                {/* Individual Students */}
+                <Divider orientation="left">Додати окремих студентів</Divider>
+                <AntForm.Item>
+                    <Select
+                        mode="multiple"
+                        allowClear
+                        placeholder="Оберіть студентів для додавання"
+                        value={values.studentIds}
+                        onChange={val => setFieldValue('studentIds', val)}
+                        style={{ width: '100%' }}
+                        optionFilterProp="children"
+                        showSearch
+                    >
+                        {allStudents.map(student => {
+                            const group = groups.find(g => g.id === student.groupId);
+                            const brand = brands.find(b => b.id === student.brandId);
+                            const isAlreadyInSession = uniqueCurrentStudentIds.includes(student.id);
+                            const isSelectedInGroups = values.groupIds.some(gid => 
+                                groupIdToStudents[gid]?.some(s => s.id === student.id)
+                            );
+                            return (
+                                <Option
+                                    key={student.id}
+                                    value={student.id}
+                                    disabled={isAlreadyInSession || isSelectedInGroups}
+                                >
+                                    {student.fullName} ({group?.name || '—'} - {brand?.name || 'Без бренду'})
+                                    {isAlreadyInSession && ' (вже в уроці)'}
+                                </Option>
+                            );
+                        })}
+                    </Select>
+                </AntForm.Item>
+
+                {/* New Students Preview */}
+                {selectedStudentIds.length > 0 && (
+                    <>
+                        <Divider orientation="left">Нові студенти для додавання: {selectedStudentIds.length}</Divider>
+                        <Row gutter={[8, 8]}>
+                            {selectedStudentIds.map(sid => {
+                                const student = allStudents.find(s => s.id === sid);
+                                if (!student) return null;
+                                const group = groups.find(g => g.id === student.groupId);
+                                const brand = brands.find(b => b.id === student.brandId);
+                                return (
+                                    <Col key={sid} span={12}>
+                                        <Tag color="green">
+                                            {student.fullName} ({group?.name || '—'} - {brand?.name || 'Без бренду'})
+                                        </Tag>
+                                    </Col>
+                                );
+                            })}
+                        </Row>
+                    </>
+                )}
+
                 {/* Session Type Info */}
+                <Divider />
                 <AntForm.Item label="Тип уроку">
                     <Text type="secondary">
                         {values.questionnaireId ? 'Домашня робота' : 'Звичайна'}
@@ -811,6 +1248,7 @@ const SessionsOverviewPage = () => {
                             questionnaireId: '',
                             groupIds: [],
                             studentIds: [],
+                            groupStudentSelections: {}, // { groupId: [studentId1, studentId2, ...] }
                             tableLayoutId: '',
                         }}
                         validationSchema={SessionSchema}
@@ -850,16 +1288,22 @@ const SessionsOverviewPage = () => {
                     open={isEditModalVisible}
                     onCancel={handleEditModalCancel}
                     footer={null}
-                    width={500}
+                    width={800}
                 >
                     <Formik
                         initialValues={{
                             name: editingSession?.name || '',
                             questionnaireId: editingSession?.questionnaireId || '',
+                            groupIds: [],
+                            studentIds: [],
+                            studentsToRemove: [],
                         }}
                         validationSchema={Yup.object().shape({
                             name: Yup.string().required('Введіть назву уроку'),
                             questionnaireId: Yup.string(),
+                            groupIds: Yup.array().of(Yup.string()),
+                            studentIds: Yup.array().of(Yup.string()),
+                            studentsToRemove: Yup.array().of(Yup.string()),
                         })}
                         onSubmit={handleEditModalOk}
                         enableReinitialize
