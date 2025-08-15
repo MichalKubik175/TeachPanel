@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Typography, Space, Spin, Alert, Button, Segmented, Row, Col, Badge, Tooltip, message, Modal, List, Avatar, Tag } from 'antd';
-import { PlayCircleOutlined, ExclamationCircleOutlined, FileTextOutlined, BookOutlined, UserOutlined, TeamOutlined, SwapOutlined, DeleteOutlined, DragOutlined, QuestionCircleOutlined, CheckCircleOutlined, ExclamationOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Card, Typography, Space, Spin, Alert, Button, Segmented, Row, Col, Badge, Tooltip, message, Modal, List, Avatar, Tag, Popconfirm, Dropdown } from 'antd';
+import { PlayCircleOutlined, ExclamationCircleOutlined, FileTextOutlined, BookOutlined, UserOutlined, TeamOutlined, SwapOutlined, DeleteOutlined, DragOutlined, QuestionCircleOutlined, CheckCircleOutlined, ExclamationOutlined, CloseCircleOutlined, EditOutlined, MoreOutlined } from '@ant-design/icons';
 import { sessionsApi } from '../../services/sessionsApi';
 import { sessionHomeworkAnswersApi } from '../../services/sessionHomeworkAnswersApi';
 import { sessionRegularAnswersApi } from '../../services/sessionRegularAnswersApi';
@@ -45,6 +45,7 @@ const SessionPage = () => {
     // Regular state specific
     const [regularStudentAnswers, setRegularStudentAnswers] = useState({}); // { studentId: [{ questionNumber, state, score, id }] }
     const [nextQuestionNumber, setNextQuestionNumber] = useState(1);
+    const [selectedAnswer, setSelectedAnswer] = useState(null); // Selected answer for editing
 
     // Generate table structure from table layout
     const tableStructure = useMemo(() => {
@@ -150,6 +151,16 @@ const SessionPage = () => {
             return;
         }
 
+        // Handle Escape key to unselect answer in regular mode
+        if (event.key === 'Escape' && currentState === 'Regular') {
+            event.preventDefault();
+            if (selectedAnswer) {
+                console.log('Escape pressed - unselecting answer');
+                setSelectedAnswer(null);
+                return;
+            }
+        }
+
         let newState = null;
         switch (event.key) {
             case 'F1':
@@ -175,9 +186,21 @@ const SessionPage = () => {
         if (currentState === 'Homework') {
             handleHomeworkAnswerScore(newState);
         } else {
-            handleRegularAnswerScore(newState);
+            // In regular mode, check if we have a selected answer to edit
+            if (selectedAnswer && selectedStudent) {
+                console.log('Editing selected answer:', selectedAnswer);
+                handleEditRegularAnswer(selectedAnswer, newState);
+            } else {
+                // Create new answer if no answer is selected
+                handleRegularAnswerScore(newState);
+            }
         }
-    }, [currentState, selectedQuestion, selectedStudent]);
+    }, [currentState, selectedQuestion, selectedStudent, selectedAnswer]);
+
+    // Clear selected answer when student changes
+    useEffect(() => {
+        setSelectedAnswer(null);
+    }, [selectedStudent]);
 
     // Setup keyboard event listeners
     useEffect(() => {
@@ -375,6 +398,81 @@ const SessionPage = () => {
         } catch (error) {
             console.error('Error updating regular answer:', error);
             message.error('Помилка при збереженні відповіді');
+        } finally {
+            setLoadingAnswers(false);
+        }
+    };
+
+    // Edit regular answer
+    const handleEditRegularAnswer = async (answer, newState) => {
+        console.log('handleEditRegularAnswer called:', { answer, newState });
+        
+        if (!selectedStudent) return;
+
+        try {
+            setLoadingAnswers(true);
+            
+            // Update answer on backend
+            await sessionRegularAnswersApi.updateSessionRegularAnswer(answer.id, {
+                sessionRegularStudentId: selectedStudent.id,
+                questionNumber: answer.questionNumber,
+                state: newState
+            });
+            
+            // Update local state
+            setRegularStudentAnswers(prev => {
+                const studentAnswers = prev[selectedStudent.id] || [];
+                const updatedAnswers = studentAnswers.map(ans => 
+                    ans.id === answer.id 
+                        ? { ...ans, state: newState, score: getAnswerStateInfo(newState).score }
+                        : ans
+                );
+                
+                return {
+                    ...prev,
+                    [selectedStudent.id]: updatedAnswers
+                };
+            });
+
+            const stateInfo = getAnswerStateInfo(newState);
+            message.success(`Відповідь оновлено: ${stateInfo.text} (${stateInfo.score} балів)`);
+            
+        } catch (error) {
+            console.error('Error updating regular answer:', error);
+            message.error('Помилка при оновленні відповіді');
+        } finally {
+            setLoadingAnswers(false);
+        }
+    };
+
+    // Delete regular answer
+    const handleDeleteRegularAnswer = async (answer) => {
+        console.log('handleDeleteRegularAnswer called:', answer);
+        
+        if (!selectedStudent) return;
+
+        try {
+            setLoadingAnswers(true);
+            
+            // Delete answer on backend
+            await sessionRegularAnswersApi.deleteSessionRegularAnswer(answer.id);
+            
+            // Update local state
+            setRegularStudentAnswers(prev => {
+                const studentAnswers = prev[selectedStudent.id] || [];
+                const filteredAnswers = studentAnswers.filter(ans => ans.id !== answer.id);
+                
+                return {
+                    ...prev,
+                    [selectedStudent.id]: filteredAnswers
+                };
+            });
+
+            message.success('Відповідь видалено');
+            
+        } catch (error) {
+            console.error('Error deleting regular answer:', error);
+            message.error('Помилка при видаленні відповіді');
         } finally {
             setLoadingAnswers(false);
         }
@@ -1181,14 +1279,35 @@ const SessionPage = () => {
                                     <Text strong>
                                         Обраний студент: {selectedStudent ? selectedStudent.student?.fullName : 'Не обрано'}
                                     </Text>
-                                    <Text type="secondary">
-                                        Наступне питання: №{nextQuestionNumber}
-                                    </Text>
-                                    <Space>
+                                    {selectedAnswer ? (
+                                        <Text type="secondary">
+                                            Обрана відповідь: Питання #{selectedAnswer.questionNumber} ({getAnswerStateInfo(selectedAnswer.state).text})
+                                        </Text>
+                                    ) : (
+                                        <Text type="secondary">
+                                            Наступне питання: №{nextQuestionNumber}
+                                        </Text>
+                                    )}
+                                    <Space wrap>
                                         <Tag color="green">F1 - Добре (1 бал)</Tag>
                                         <Tag color="orange">F2 - Нормально (0.5 бала)</Tag>
                                         <Tag color="red">F3 - Погано (0 балів)</Tag>
                                     </Space>
+                                    {selectedAnswer ? (
+                                        <div>
+                                            <Text type="secondary" style={{ fontSize: '12px' }}>
+                                                💡 Натисніть F1, F2 або F3 для зміни обраної відповіді
+                                            </Text>
+                                            <br />
+                                            <Text type="secondary" style={{ fontSize: '11px', color: '#999' }}>
+                                                Esc, повторний клік або клік по пустому місцю для скасування
+                                            </Text>
+                                        </div>
+                                    ) : (
+                                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                                            💡 Натисніть F1, F2 або F3 для додавання нової відповіді
+                                        </Text>
+                                    )}
                                 </Space>
                             </Card>
 
@@ -1207,20 +1326,66 @@ const SessionPage = () => {
                                                             dataSource={studentAnswers}
                                                             renderItem={(answer) => {
                                                                 const stateInfo = getAnswerStateInfo(answer.state);
+                                                                const isSelected = selectedAnswer?.id === answer.id;
+
                                                                 return (
-                                                                    <List.Item style={{ padding: '8px 0' }}>
-                                                                                                                                <Space>
-                                                            <Text strong>Відповідь</Text>
-                                                            <div 
-                                                                style={{ 
-                                                                    width: '12px', 
-                                                                    height: '12px', 
-                                                                    borderRadius: '50%', 
-                                                                    backgroundColor: stateInfo.color 
-                                                                }} 
-                                                            />
-                                                            <Text>{answer.score} {answer.score === 1 ? 'бал' : answer.score === 0 ? 'балів' : 'бала'}</Text>
-                                                        </Space>
+                                                                    <List.Item 
+                                                                        style={{ 
+                                                                            padding: '8px 0',
+                                                                            cursor: 'pointer',
+                                                                            backgroundColor: isSelected ? '#e6f7ff' : 'transparent',
+                                                                            border: isSelected ? '1px solid #1890ff' : '1px solid transparent',
+                                                                            borderRadius: '4px',
+                                                                            marginBottom: '4px'
+                                                                        }}
+                                                                        onClick={() => {
+                                                                            // Toggle selection - if already selected, unselect it
+                                                                            if (selectedAnswer?.id === answer.id) {
+                                                                                setSelectedAnswer(null);
+                                                                            } else {
+                                                                                setSelectedAnswer(answer);
+                                                                            }
+                                                                        }}
+                                                                        actions={[
+                                                                            <Button 
+                                                                                type="text" 
+                                                                                icon={<DeleteOutlined />}
+                                                                                size="small"
+                                                                                loading={loadingAnswers}
+                                                                                danger
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation(); // Prevent selecting the answer
+                                                                                    Modal.confirm({
+                                                                                        title: 'Видалення відповіді',
+                                                                                        content: `Ви впевнені, що хочете видалити цю відповідь? Цю дію неможливо скасувати.`,
+                                                                                        okText: 'Видалити',
+                                                                                        okType: 'danger',
+                                                                                        cancelText: 'Скасувати',
+                                                                                        onOk: () => handleDeleteRegularAnswer(answer)
+                                                                                    });
+                                                                                }}
+                                                                            />
+                                                                        ]}
+                                                                    >
+                                                                        <Space>
+                                                                            <Text strong style={{ color: isSelected ? '#1890ff' : 'inherit' }}>
+                                                                                Питання #{answer.questionNumber || 1}
+                                                                            </Text>
+                                                                            <div 
+                                                                                style={{ 
+                                                                                    width: '12px', 
+                                                                                    height: '12px', 
+                                                                                    borderRadius: '50%', 
+                                                                                    backgroundColor: stateInfo.color 
+                                                                                }} 
+                                                                            />
+                                                                            <Text style={{ color: isSelected ? '#1890ff' : 'inherit' }}>
+                                                                                {stateInfo.text}
+                                                                            </Text>
+                                                                            <Text style={{ color: isSelected ? '#1890ff' : 'inherit' }}>
+                                                                                ({answer.score} {answer.score === 1 ? 'бал' : answer.score === 0 ? 'балів' : 'бала'})
+                                                                            </Text>
+                                                                        </Space>
                                                                     </List.Item>
                                                                 );
                                                             }}
@@ -1465,7 +1630,20 @@ const SessionPage = () => {
                 </div>
 
                 {/* Main Content Area */}
-                <div style={{ padding: '24px' }}>
+                <div 
+                    style={{ padding: '24px' }}
+                    onClick={(e) => {
+                        // Only unselect in regular mode if an answer is selected
+                        if (currentState === 'Regular' && selectedAnswer) {
+                            // Check if the click was on an interactive element
+                            const isInteractiveElement = e.target.closest('button, .ant-list-item, .ant-card-head, .ant-select, .ant-input, .ant-modal, .ant-dropdown, .ant-tag');
+                            if (!isInteractiveElement) {
+                                console.log('Clicked on empty space - unselecting answer');
+                                setSelectedAnswer(null);
+                            }
+                        }
+                    }}
+                >
                     <Card style={{ minHeight: '70vh' }}>
                         {renderStateContent()}
                     </Card>
