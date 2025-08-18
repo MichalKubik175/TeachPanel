@@ -11,3 +11,4 @@ public sealed class StudentWithAnswersModel
     public int HomeworkAnswerCount { get; set; }
     public int RegularAnswerCount { get; set; }
 }
+

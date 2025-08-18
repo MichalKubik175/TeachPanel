@@ -11,6 +11,7 @@ using TeachPanel.Application.Models.TableLayouts;
 using TeachPanel.Application.Models.Users;
 using TeachPanel.Application.Models.SessionHomeworkAnswers;
 using TeachPanel.Application.Models.SessionRegularAnswers;
+using TeachPanel.Application.Models.Visits;
 using TeachPanel.Core.Models.Entities;
 
 namespace TeachPanel.Application.Mapping;
@@ -271,6 +272,22 @@ public static class ModelMappingExtensions
             CreatedAtLocal = answer.CreatedAtLocal,
             CreatedAtUtc = answer.CreatedAtUtc.UtcDateTime,
             UpdatedAtUtc = answer.UpdatedAtUtc?.UtcDateTime,
+        };
+    }
+
+    public static StudentVisitModel ToStudentVisitModel(this StudentVisit visit)
+    {
+        ArgumentNullException.ThrowIfNull(visit);
+
+        return new StudentVisitModel
+        {
+            Id = visit.Id,
+            StudentId = visit.StudentId,
+            Student = visit.Student?.ToStudentModel(),
+            VisitDate = visit.VisitDate,
+            IsPresent = visit.IsPresent,
+            Notes = visit.Notes,
+            CreatedAtUtc = visit.CreatedAtUtc.UtcDateTime
         };
     }
 }

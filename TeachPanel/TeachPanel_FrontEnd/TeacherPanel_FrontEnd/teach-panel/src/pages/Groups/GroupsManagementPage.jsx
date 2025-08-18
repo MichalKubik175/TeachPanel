@@ -306,3 +306,4 @@ const GroupsManagementPage = ({ onBack }) => {
 };
 
 export default GroupsManagementPage;
+

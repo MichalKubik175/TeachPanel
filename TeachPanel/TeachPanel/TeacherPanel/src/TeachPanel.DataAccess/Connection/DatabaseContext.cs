@@ -27,6 +27,7 @@ public class DatabaseContext : DbContext
     public DbSet<SessionRegularStudent> SessionRegularStudents { get; set; }
     public DbSet<SessionHomeworkAnswer> SessionHomeworkAnswers { get; set; }
     public DbSet<SessionRegularAnswer> SessionRegularAnswers { get; set; }
+    public DbSet<StudentVisit> StudentVisits { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

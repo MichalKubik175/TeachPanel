@@ -8,6 +8,7 @@ import SessionCreatePage from './Sessions/SessionCreatePage.jsx';
 import TableLayoutsOverviewPage from './TableLayouts/TableLayoutsOverviewPage.jsx';
 import SessionsOverviewPage from './Sessions/SessionsOverviewPage.jsx';
 import HomePage from './Home/HomePage.jsx';
+import VisitingPage from './Visits/VisitingPage.jsx';
 import {Layout as AntLayout, Typography, Dropdown, Button, Avatar, Space, Skeleton, Modal, Menu, Spin} from 'antd';
 import {
     KeyOutlined,
@@ -28,6 +29,7 @@ import {
     PlayCircleOutlined,
     TrophyOutlined,
     BarChartOutlined,
+    CheckSquareOutlined,
 } from '@ant-design/icons';
 import { clearTokens } from "../features/auth/tokenExpiry.js";
 import { logout as logoutAction } from "../features/auth/authSlice.js";
@@ -106,6 +108,7 @@ export default function AppLayout() {
     const sideMenuItems = [
         { key: 'dashboard', icon: <BarChartOutlined />, label: 'Дашборд' },
         { key: 'students', icon: <UserAddOutlined />,   label: 'Студенти' },
+        { key: 'visiting', icon: <CheckSquareOutlined />, label: 'Відвідування' },
         { key: 'questionnaires', icon: <FileTextOutlined />, label: 'Опитування' },
         { key: 'sessions', icon: <PlayCircleOutlined />, label: 'Уроки' },
         { key: 'tableLayoutCreate', icon: <ProjectOutlined />, label: 'Розкладки столів' },
@@ -142,6 +145,9 @@ export default function AppLayout() {
                     )}
                     {selectedKey === 'students' && (
                         <StudentsOverviewPage />
+                    )}
+                    {selectedKey === 'visiting' && (
+                        <VisitingPage />
                     )}
                     {selectedKey === 'questionnaires' && (
                         <QuestionnairesManagementPage />
