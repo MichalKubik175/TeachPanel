@@ -30,7 +30,10 @@ import {
     TrophyOutlined,
     BarChartOutlined,
     CheckSquareOutlined,
+    MoonOutlined,
+    SunOutlined,
 } from '@ant-design/icons';
+import { useTheme } from '../contexts/ThemeContext.jsx';
 import { clearTokens } from "../features/auth/tokenExpiry.js";
 import { logout as logoutAction } from "../features/auth/authSlice.js";
 
@@ -49,6 +52,7 @@ export default function AppLayout() {
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
+    const { isDarkMode, toggleTheme } = useTheme();
     
     // Check if current path should be rendered without workspace
     const isWorkspacelessLocation = workspacelessLocations.includes(location.pathname);
@@ -249,22 +253,31 @@ export default function AppLayout() {
                             </div>
                         </Space>
 
-                        {/* User dropdown */}
-                        <Dropdown
-                            menu={{items: userItems, onClick: onUserClick}}
-                            trigger={['click']}
-                        >
-                            <Button type="text">
-                                {userData.status !== 'authenticated' && (
-                                    <UserAvatarNameSkeleton/>
-                                )}
-                                {userData.status === 'authenticated' && (
-                                    <>
-                                        <Avatar icon={<UserOutlined/>} style={{marginRight: 8}}/> {userData.user.fullName}
-                                    </>
-                                )} <DownOutlined/>
-                            </Button>
-                        </Dropdown>
+                        {/* Theme toggle and User dropdown */}
+                        <Space>
+                            <Button
+                                type="text"
+                                icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+                                onClick={toggleTheme}
+                                className="theme-toggle-btn"
+                                title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                            />
+                            <Dropdown
+                                menu={{items: userItems, onClick: onUserClick}}
+                                trigger={['click']}
+                            >
+                                <Button type="text">
+                                    {userData.status !== 'authenticated' && (
+                                        <UserAvatarNameSkeleton/>
+                                    )}
+                                    {userData.status === 'authenticated' && (
+                                        <>
+                                            <Avatar icon={<UserOutlined/>} style={{marginRight: 8}}/> {userData.user.fullName}
+                                        </>
+                                    )} <DownOutlined/>
+                                </Button>
+                            </Dropdown>
+                        </Space>
                     </Header>
 
                     <Outlet />
@@ -305,22 +318,31 @@ export default function AppLayout() {
                     </div>
                 </Space>
 
-                {/* User dropdown */}
-                <Dropdown
-                    menu={{items: userItems, onClick: onUserClick}}
-                    trigger={['click']}
-                >
-                    <Button type="text">
-                        {userData.status !== 'authenticated' && (
-                            <UserAvatarNameSkeleton/>
-                        )}
-                        {userData.status === 'authenticated' && (
-                            <>
-                                <Avatar icon={<UserOutlined/>} style={{marginRight: 8}}/> {userData.user.fullName}
-                            </>
-                        )} <DownOutlined/>
-                    </Button>
-                </Dropdown>
+                {/* Theme toggle and User dropdown */}
+                <Space>
+                    <Button
+                        type="text"
+                        icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+                        onClick={toggleTheme}
+                        className="theme-toggle-btn"
+                        title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                    />
+                    <Dropdown
+                        menu={{items: userItems, onClick: onUserClick}}
+                        trigger={['click']}
+                    >
+                        <Button type="text">
+                            {userData.status !== 'authenticated' && (
+                                <UserAvatarNameSkeleton/>
+                            )}
+                            {userData.status === 'authenticated' && (
+                                <>
+                                    <Avatar icon={<UserOutlined/>} style={{marginRight: 8}}/> {userData.user.fullName}
+                                </>
+                            )} <DownOutlined/>
+                        </Button>
+                    </Dropdown>
+                </Space>
             </Header>
 
             {/* Main Layout with Sidebar and Content */}

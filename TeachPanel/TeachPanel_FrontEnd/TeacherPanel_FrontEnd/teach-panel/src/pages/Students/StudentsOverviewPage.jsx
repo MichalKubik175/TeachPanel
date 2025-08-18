@@ -36,7 +36,7 @@ const StudentsOverviewPage = () => {
             key: 'fullName',
             render: (text) => (
                 <Space>
-                    <UserOutlined style={{ color: '#1890ff' }} />
+                    <UserOutlined style={{ color: 'var(--color-primary)' }} />
                     <Text strong>{text}</Text>
                 </Space>
             ),
@@ -47,8 +47,8 @@ const StudentsOverviewPage = () => {
             key: 'totalScore',
             render: (score) => (
                 <Space>
-                    <TrophyOutlined style={{ color: '#faad14' }} />
-                    <Text strong style={{ color: score >= 90 ? '#52c41a' : score >= 80 ? '#1890ff' : '#ff4d4f' }}>
+                    <TrophyOutlined style={{ color: 'var(--color-warning)' }} />
+                    <Text strong style={{ color: score >= 90 ? 'var(--color-success)' : score >= 80 ? 'var(--color-primary)' : 'var(--color-error)' }}>
                         {score}/100
                     </Text>
                 </Space>

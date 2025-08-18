@@ -32,6 +32,7 @@ import {
 import { sessionsApi } from '../../services/sessionsApi';
 import { useBrandsGroupsStudents } from '../../hooks/useBrandsGroupsStudents';
 import { useQuestionnaires } from '../../hooks/useQuestionnaires';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const { Title, Text } = Typography;
 
@@ -41,6 +42,7 @@ const HomePage = () => {
     const [sessions, setSessions] = useState([]);
     const [loadingSessions, setLoadingSessions] = useState(true);
     const [recentActivities, setRecentActivities] = useState([]);
+    const { theme } = useTheme();
     
     // Get data from hooks
     const {
@@ -170,7 +172,11 @@ const HomePage = () => {
     }
 
     return (
-        <div style={{ padding: '24px', backgroundColor: '#f0f2f5', minHeight: 'calc(100vh - 64px)' }}>
+        <div style={{ 
+            padding: '24px', 
+            backgroundColor: theme.colors.bgSecondary, 
+            minHeight: 'calc(100vh - 64px)' 
+        }}>
             {/* Welcome Header */}
             <div style={{ marginBottom: '24px' }}>
                 <Title level={2} style={{ margin: 0 }}>
@@ -188,8 +194,8 @@ const HomePage = () => {
                         <Statistic
                             title="Всього студентів"
                             value={totalStudents}
-                            prefix={<UserOutlined style={{ color: '#1890ff' }} />}
-                            valueStyle={{ color: '#1890ff' }}
+                            prefix={<UserOutlined style={{ color: 'var(--color-primary)' }} />}
+                            valueStyle={{ color: 'var(--color-primary)' }}
                         />
                     </Card>
                 </Col>
@@ -208,8 +214,8 @@ const HomePage = () => {
                         <Statistic
                             title="Уроків сьогодні"
                             value={todaysLessons}
-                            prefix={<BookOutlined style={{ color: '#52c41a' }} />}
-                            valueStyle={{ color: '#52c41a' }}
+                            prefix={<BookOutlined style={{ color: 'var(--color-success)' }} />}
+                            valueStyle={{ color: 'var(--color-success)' }}
                         />
                     </Card>
                 </Col>
@@ -219,8 +225,8 @@ const HomePage = () => {
                             title="Середня ефективність"
                             value={avgEfficiency}
                             suffix="%"
-                            prefix={<TrophyOutlined style={{ color: '#faad14' }} />}
-                            valueStyle={{ color: '#faad14' }}
+                            prefix={<TrophyOutlined style={{ color: 'var(--color-warning)' }} />}
+                            valueStyle={{ color: 'var(--color-warning)' }}
                         />
                     </Card>
                 </Col>

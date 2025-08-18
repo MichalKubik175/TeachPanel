@@ -1,7 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
+import './styles/theme.css';
+import './pages/PublicShowcase/PublicShowcaseForceLight.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from './contexts/ThemeContext.jsx';
 import '@ant-design/v5-patch-for-react-19';
 import store from './app/store';
 import { Provider } from 'react-redux';
@@ -23,7 +26,8 @@ import SettingsPage from "./pages/Settings/SettingsPage.jsx";
 import StudentsOverviewPage from "./pages/Students/StudentsOverviewPage.jsx";
 import StudentManagementPage from "./pages/Students/StudentManagementPage.jsx";
 import TotalResultsPage from "./pages/TotalResults/TotalResultsPage.jsx";
-import PublicShowcasePage from "./pages/PublicShowcase/PublicShowcasePage.jsx";
+import PublicShowcasePageIsolated from "./pages/PublicShowcase/PublicShowcasePageIsolated.jsx";
+import PublicShowcaseWrapper from "./components/PublicShowcaseWrapper.jsx";
 
 const queryClient = new QueryClient();
 
@@ -98,7 +102,7 @@ const router = createBrowserRouter([
         path: 'public-showcase',
         element: (
             <PrivateRoute>
-                <PublicShowcasePage />
+                                        <PublicShowcasePageIsolated />
             </PrivateRoute>
         ),
         errorElement: <ErrorFallback />,
@@ -107,12 +111,14 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>
-        <Provider store={store}>
-            <QueryClientProvider client={queryClient}>
-                <AuthBootstrap>
-                    <RouterProvider router={router} />
-                </AuthBootstrap>
-            </QueryClientProvider>
-        </Provider>
+        <ThemeProvider>
+            <Provider store={store}>
+                <QueryClientProvider client={queryClient}>
+                    <AuthBootstrap>
+                        <RouterProvider router={router} />
+                    </AuthBootstrap>
+                </QueryClientProvider>
+            </Provider>
+        </ThemeProvider>
     </StrictMode>
 );

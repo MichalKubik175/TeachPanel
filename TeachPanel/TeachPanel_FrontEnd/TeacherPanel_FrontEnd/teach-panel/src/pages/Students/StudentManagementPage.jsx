@@ -363,9 +363,9 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
                 const efficiency = parseFloat(scores.homeworkEfficiency);
                 return (
                     <Space>
-                        <PercentageOutlined style={{ color: '#1890ff' }} />
+                        <PercentageOutlined style={{ color: 'var(--color-primary)' }} />
                         <Text strong style={{ 
-                            color: efficiency >= 70 ? '#52c41a' : efficiency >= 50 ? '#faad14' : '#ff4d4f' 
+                            color: efficiency >= 70 ? 'var(--color-success)' : efficiency >= 50 ? 'var(--color-warning)' : 'var(--color-error)' 
                         }}>
                             {scores.homeworkEfficiency}%
                         </Text>
@@ -390,9 +390,9 @@ const StudentManagementPage = ({ onBack, onSwitchToGroups, onSwitchToBrands }) =
                 const efficiency = parseFloat(scores.regularEfficiency);
                 return (
                     <Space>
-                        <PercentageOutlined style={{ color: '#1890ff' }} />
+                        <PercentageOutlined style={{ color: 'var(--color-primary)' }} />
                         <Text strong style={{ 
-                            color: efficiency >= 70 ? '#52c41a' : efficiency >= 50 ? '#faad14' : '#ff4d4f' 
+                            color: efficiency >= 70 ? 'var(--color-success)' : efficiency >= 50 ? 'var(--color-warning)' : 'var(--color-error)' 
                         }}>
                             {scores.regularEfficiency}%
                         </Text>

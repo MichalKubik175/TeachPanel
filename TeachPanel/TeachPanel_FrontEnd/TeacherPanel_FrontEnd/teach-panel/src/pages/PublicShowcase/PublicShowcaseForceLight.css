@@ -1,0 +1,224 @@
+/* ULTIMATE NUCLEAR OPTION: Complete theme override for Public Showcase - Maximum specificity */
+
+/* Disable ALL theme variables globally when on showcase page */
+html[data-theme="light"] body.public-showcase-active,
+html[data-theme="light"] body.public-showcase-active *,
+html[data-theme="light"] body.public-showcase-active *::before,
+html[data-theme="light"] body.public-showcase-active *::after,
+html body.public-showcase-active,
+html body.public-showcase-active *,
+html body.public-showcase-active *::before,
+html body.public-showcase-active *::after {
+  /* Force ALL CSS variables to light theme - highest priority */
+  background-color: initial !important;
+  color: initial !important;
+  border-color: initial !important;
+}
+
+/* Global override - force everything to light theme */
+html body.public-showcase-active,
+html body.public-showcase-active *,
+html body.public-showcase-active *::before,
+html body.public-showcase-active *::after {
+  /* Reset ALL CSS variables to light theme */
+  --bg-color: #ffffff !important;
+  --bg-secondary: #fafafa !important;
+  --bg-tertiary: #f5f5f5 !important;
+  --text-primary: #000000 !important;
+  --text-secondary: #666666 !important;
+  --text-tertiary: #8c8c8c !important;
+  --border-color: #d9d9d9 !important;
+  --border-secondary: #f0f0f0 !important;
+  --hover-bg: #f5f5f5 !important;
+  --card-bg: #ffffff !important;
+  --input-bg: #ffffff !important;
+  --disabled-bg: #f5f5f5 !important;
+  --disabled-text: #bfbfbf !important;
+  --color-primary: #1890ff !important;
+  --color-success: #52c41a !important;
+  --color-warning: #faad14 !important;
+  --color-error: #ff4d4f !important;
+}
+
+/* Hide theme toggle completely */
+html body.public-showcase-active .theme-toggle-btn,
+html body.public-showcase-active [class*="theme-toggle"] {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Force body and root backgrounds */
+html body.public-showcase-active {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Nuclear override for ALL Ant Design components */
+html body.public-showcase-active .ant-layout,
+html body.public-showcase-active .ant-layout *,
+html body.public-showcase-active .ant-card,
+html body.public-showcase-active .ant-card *,
+html body.public-showcase-active .ant-typography,
+html body.public-showcase-active .ant-typography *,
+html body.public-showcase-active .ant-space,
+html body.public-showcase-active .ant-space *,
+html body.public-showcase-active .ant-row,
+html body.public-showcase-active .ant-row *,
+html body.public-showcase-active .ant-col,
+html body.public-showcase-active .ant-col *,
+html body.public-showcase-active .ant-divider,
+html body.public-showcase-active .ant-divider *,
+html body.public-showcase-active .ant-progress,
+html body.public-showcase-active .ant-progress *,
+html body.public-showcase-active .ant-avatar,
+html body.public-showcase-active .ant-avatar *,
+html body.public-showcase-active .ant-tag,
+html body.public-showcase-active .ant-tag *,
+html body.public-showcase-active .ant-spin,
+html body.public-showcase-active .ant-spin *,
+html body.public-showcase-active .ant-empty,
+html body.public-showcase-active .ant-empty *,
+html body.public-showcase-active .ant-statistic,
+html body.public-showcase-active .ant-statistic *,
+html body.public-showcase-active .ant-badge,
+html body.public-showcase-active .ant-badge * {
+  /* Force light theme colors */
+  background-color: inherit !important;
+  color: inherit !important;
+  border-color: inherit !important;
+}
+
+/* Specific component overrides with maximum specificity */
+html body.public-showcase-active .ant-layout {
+  background: #f5f5f5 !important;
+  color: #000000 !important;
+}
+
+html body.public-showcase-active .ant-card {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #d9d9d9 !important;
+}
+
+html body.public-showcase-active .ant-card-head {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+
+html body.public-showcase-active .ant-typography,
+html body.public-showcase-active .ant-typography h1,
+html body.public-showcase-active .ant-typography h2,
+html body.public-showcase-active .ant-typography h3,
+html body.public-showcase-active .ant-typography h4,
+html body.public-showcase-active .ant-typography h5,
+html body.public-showcase-active .ant-typography h6,
+html body.public-showcase-active .ant-typography p,
+html body.public-showcase-active .ant-typography span,
+html body.public-showcase-active .ant-typography div,
+html body.public-showcase-active h1,
+html body.public-showcase-active h2,
+html body.public-showcase-active h3,
+html body.public-showcase-active h4,
+html body.public-showcase-active h5,
+html body.public-showcase-active h6,
+html body.public-showcase-active p,
+html body.public-showcase-active span,
+html body.public-showcase-active div {
+  color: #000000 !important;
+}
+
+html body.public-showcase-active .ant-typography-secondary {
+  color: #666666 !important;
+}
+
+html body.public-showcase-active .ant-progress-text {
+  color: #000000 !important;
+}
+
+html body.public-showcase-active .ant-avatar {
+  background: #1890ff !important;
+  color: #ffffff !important;
+}
+
+html body.public-showcase-active .ant-statistic-title {
+  color: #666666 !important;
+}
+
+html body.public-showcase-active .ant-statistic-content {
+  color: #000000 !important;
+}
+
+html body.public-showcase-active .ant-empty-description {
+  color: #666666 !important;
+}
+
+/* Preserve the beautiful showcase styling */
+html body.public-showcase-active .public-showcase {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  min-height: 100vh !important;
+  color: #ffffff !important;
+}
+
+/* Let the original showcase CSS take full control within the showcase container */
+html body.public-showcase-active .public-showcase * {
+  /* Reset to let original CSS work */
+  background-color: initial;
+  color: initial;
+  border-color: initial;
+}
+
+/* Override any remaining dark mode interference */
+html body.public-showcase-active .public-showcase .ant-card {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #000000 !important;
+}
+
+html body.public-showcase-active .public-showcase .ant-typography {
+  color: inherit !important;
+}
+
+html body.public-showcase-active .public-showcase .brand-title {
+  color: #1890ff !important;
+}
+
+html body.public-showcase-active .public-showcase .header-title {
+  color: white !important;
+}
+
+html body.public-showcase-active .public-showcase .student-name {
+  color: #262626 !important;
+}
+
+html body.public-showcase-active .public-showcase .score-value {
+  color: #262626 !important;
+}
+
+html body.public-showcase-active .public-showcase .total-value {
+  color: #262626 !important;
+}
+
+html body.public-showcase-active .public-showcase .brand-efficiency-text {
+  color: #262626 !important;
+}
+
+/* Force all text colors in the showcase */
+html body.public-showcase-active .showcase-header * {
+  color: white !important;
+}
+
+html body.public-showcase-active .brand-showcase-card * {
+  color: #000000 !important;
+}
+
+html body.public-showcase-active .brand-showcase-card .brand-title {
+  color: #1890ff !important;
+}
+
+html body.public-showcase-active .student-row * {
+  color: #262626 !important;
+}
+
+html body.public-showcase-active .brand-totals * {
+  color: #262626 !important;
+}

@@ -22,6 +22,7 @@ import { sessionHomeworkAnswersApi } from '../../services/sessionHomeworkAnswers
 import { sessionRegularAnswersApi } from '../../services/sessionRegularAnswersApi';
 import { useBrandsGroupsStudents } from '../../hooks/useBrandsGroupsStudents';
 import './PublicShowcasePage.css';
+import './PublicShowcaseForceLight.css';
 
 const { Title, Text } = Typography;
 

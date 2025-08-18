@@ -290,7 +290,7 @@ const VisitingPage = () => {
                 return (
                     <Space direction="vertical" size={0}>
                         <Space>
-                            <UserOutlined style={{ color: '#1890ff' }} />
+                                                         <UserOutlined style={{ color: 'var(--color-primary)' }} />
                             <Text strong>{text}</Text>
                         </Space>
                         <Text type="secondary" style={{ fontSize: '12px' }}>
@@ -431,38 +431,38 @@ const VisitingPage = () => {
                         </Col>
                         <Col xs={24} sm={24} md={12}>
                             <Row gutter={16}>
-                                <Col span={6}>
-                                    <Statistic
-                                        title="Всього студентів"
-                                        value={overallStats.total}
-                                        prefix={<UserOutlined />}
-                                    />
-                                </Col>
-                                <Col span={6}>
-                                    <Statistic
-                                        title="Присутніх"
-                                        value={overallStats.present}
-                                        prefix={<CheckCircleOutlined />}
-                                        valueStyle={{ color: '#3f8600' }}
-                                    />
-                                </Col>
-                                <Col span={6}>
-                                    <Statistic
-                                        title="Відсутніх"
-                                        value={overallStats.absent}
-                                        prefix={<CloseCircleOutlined />}
-                                        valueStyle={{ color: '#cf1322' }}
-                                    />
-                                </Col>
+                                                                 <Col span={6}>
+                                     <Statistic
+                                         title="Всього студентів"
+                                         value={overallStats.total}
+                                         prefix={<UserOutlined style={{ color: 'var(--color-primary)' }} />}
+                                     />
+                                 </Col>
+                                                                 <Col span={6}>
+                                     <Statistic
+                                         title="Присутніх"
+                                         value={overallStats.present}
+                                         prefix={<CheckCircleOutlined style={{ color: 'var(--color-success)' }} />}
+                                         valueStyle={{ color: 'var(--color-success)' }}
+                                     />
+                                 </Col>
+                                                                 <Col span={6}>
+                                     <Statistic
+                                         title="Відсутніх"
+                                         value={overallStats.absent}
+                                         prefix={<CloseCircleOutlined style={{ color: 'var(--color-error)' }} />}
+                                         valueStyle={{ color: 'var(--color-error)' }}
+                                     />
+                                 </Col>
                                 <Col span={6}>
                                     <Statistic
                                         title="Відсоток"
                                         value={overallStats.percentage}
                                         suffix="%"
-                                        valueStyle={{ 
-                                            color: overallStats.percentage >= 80 ? '#3f8600' : 
-                                                   overallStats.percentage >= 60 ? '#faad14' : '#cf1322' 
-                                        }}
+                                                                                 valueStyle={{ 
+                                             color: overallStats.percentage >= 80 ? 'var(--color-success)' : 
+                                                    overallStats.percentage >= 60 ? 'var(--color-warning)' : 'var(--color-error)' 
+                                         }}
                                     />
                                 </Col>
                             </Row>

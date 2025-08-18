@@ -5,12 +5,14 @@ import { PlayCircleOutlined, ExclamationCircleOutlined, FileTextOutlined, BookOu
 import { sessionsApi } from '../../services/sessionsApi';
 import { sessionHomeworkAnswersApi } from '../../services/sessionHomeworkAnswersApi';
 import { sessionRegularAnswersApi } from '../../services/sessionRegularAnswersApi';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const { Title, Text } = Typography;
 
 const SessionPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { theme } = useTheme();
 
     // Handle finish lesson
     const handleFinishLesson = () => {
@@ -924,7 +926,7 @@ const SessionPage = () => {
                     title={
                         <Space>
                             <Text strong>Стіл {table.id}</Text>
-                            <Badge count={studentsAtTable.length} style={{ backgroundColor: '#52c41a' }} />
+                            <Badge count={studentsAtTable.length} style={{ backgroundColor: 'var(--color-success)' }} />
                         </Space>
                     }
                     extra={
@@ -989,8 +991,8 @@ const SessionPage = () => {
                                         onClick={() => setSelectedStudent(sessionStudent)}
                                         style={{
                                             padding: '4px 8px',
-                                            backgroundColor: selectedStudent?.id === sessionStudent.id ? '#e6f7ff' : '#fff',
-                                            border: selectedStudent?.id === sessionStudent.id ? '2px solid #1890ff' : '1px solid #d9d9d9',
+                                            backgroundColor: selectedStudent?.id === sessionStudent.id ? '#e6f7ff' : theme.colors.bgPrimary,
+                                            border: selectedStudent?.id === sessionStudent.id ? '2px solid var(--color-primary)' : `1px solid ${theme.colors.borderPrimary}`,
                                             borderRadius: '4px',
                                             display: 'flex',
                                             justifyContent: 'space-between',
@@ -1000,12 +1002,12 @@ const SessionPage = () => {
                                         }}
                                         onMouseEnter={(e) => {
                                             if (selectedStudent?.id !== sessionStudent.id) {
-                                                e.target.style.backgroundColor = '#f0f0f0';
+                                                e.target.style.backgroundColor = theme.colors.hoverBg;
                                             }
                                         }}
                                         onMouseLeave={(e) => {
                                             if (selectedStudent?.id !== sessionStudent.id) {
-                                                e.target.style.backgroundColor = '#fff';
+                                                e.target.style.backgroundColor = theme.colors.bgPrimary;
                                             }
                                         }}
                                     >
@@ -1084,8 +1086,8 @@ const SessionPage = () => {
                                             <List.Item.Meta
                                                 avatar={
                                                     <Avatar style={{ 
-                                                        backgroundColor: selectedQuestion?.id === question.id ? '#1890ff' : '#f0f0f0',
-                                                        color: selectedQuestion?.id === question.id ? '#fff' : '#666'
+                                                        backgroundColor: selectedQuestion?.id === question.id ? 'var(--color-primary)' : theme.colors.bgTertiary,
+                                                        color: selectedQuestion?.id === question.id ? '#fff' : theme.colors.textSecondary
                                                     }}>
                                                         {index + 1}
                                                     </Avatar>
@@ -1405,7 +1407,7 @@ const SessionPage = () => {
                                                                 );
                                                             }}
                                                         />
-                                                        <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+                                                        <div style={{ marginTop: '16px', padding: '12px', backgroundColor: theme.colors.bgTertiary, borderRadius: '4px' }}>
                                                             <Row justify="space-between">
                                                                 <Col>
                                                                     <Text strong>Загальний рахунок: {stats.totalScore} / {stats.totalQuestions}</Text>
@@ -1583,12 +1585,12 @@ const SessionPage = () => {
         const hasQuestionnaire = session?.questionnaireId;
 
         return (
-            <div style={{ minHeight: '100vh', backgroundColor: '#f0f2f5' }}>
+            <div style={{ minHeight: '100vh', backgroundColor: theme.colors.bgSecondary }}>
                 {/* Top Header with Session Info and State Switcher */}
                 <div style={{ 
-                    backgroundColor: '#fff', 
+                    backgroundColor: theme.colors.bgPrimary, 
                     padding: '16px 24px', 
-                    borderBottom: '1px solid #f0f0f0',
+                    borderBottom: `1px solid ${theme.colors.borderSecondary}`,
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
@@ -1650,7 +1652,7 @@ const SessionPage = () => {
                             type="primary"
                             size="large"
                             onClick={handleFinishLesson}
-                            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                            style={{ backgroundColor: 'var(--color-success)', borderColor: 'var(--color-success)' }}
                         >
                             Завершити урок
                         </Button>
