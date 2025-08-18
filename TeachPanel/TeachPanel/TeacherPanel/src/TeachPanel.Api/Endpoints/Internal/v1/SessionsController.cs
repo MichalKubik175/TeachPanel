@@ -50,6 +50,15 @@ public sealed class SessionsController : ApiControllerBase
         return Ok(response);
     }
 
+    [HttpGet("archived")]
+    [Authorize]
+    [ProducesResponseType(typeof(PagingResponse<SessionModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetArchivedAsync([FromQuery] PagingRequest request)
+    {
+        var response = await _sessionService.GetArchivedAsync(request);
+        return Ok(response);
+    }
+
     [HttpPut("{id:guid}")]
     [Authorize]
     [ProducesResponseType(typeof(SessionModel), StatusCodes.Status200OK)]
@@ -68,6 +77,16 @@ public sealed class SessionsController : ApiControllerBase
     public async Task<IActionResult> DeleteAsync(Guid id)
     {
         await _sessionService.DeleteAsync(id);
+        return NoContent();
+    }
+
+    [HttpPut("{id:guid}/restore")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RestoreAsync(Guid id)
+    {
+        await _sessionService.RestoreAsync(id);
         return NoContent();
     }
 

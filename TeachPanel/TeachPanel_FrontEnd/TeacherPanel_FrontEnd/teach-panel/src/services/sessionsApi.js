@@ -15,6 +15,20 @@ export const sessionsApi = {
         throw error;
     }
     },
+    getArchivedSessions: async (page = 1, pageSize = 10) => {
+        try {
+            const response = await api.get('/v1/sessions/archived', {
+                params: { page, pageSize }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching archived sessions:', error);
+            console.error('Error response data:', error.response?.data);
+            console.error('Error response status:', error.response?.status);
+            console.error('Error response headers:', error.response?.headers);
+            throw error;
+        }
+    },
     getSessionById: async (id) => {
         try {
             const response = await api.get(`/v1/sessions/${id}`);
@@ -88,6 +102,18 @@ export const sessionsApi = {
             return response.data;
         } catch (error) {
             console.error('Error deleting session:', error);
+            throw error;
+        }
+    },
+    restoreSession: async (id) => {
+        try {
+            const response = await api.put(`/v1/sessions/${id}/restore`);
+            return response.data;
+        } catch (error) {
+            console.error('Error restoring session:', error);
+            console.error('Session ID:', id);
+            console.error('Error response:', error.response?.data);
+            console.error('Error status:', error.response?.status);
             throw error;
         }
     },

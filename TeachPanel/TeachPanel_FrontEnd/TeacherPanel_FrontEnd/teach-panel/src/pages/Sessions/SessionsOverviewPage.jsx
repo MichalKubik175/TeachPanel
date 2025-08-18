@@ -13,7 +13,10 @@ import {
     PlusOutlined,
     DeleteOutlined,
     EditOutlined,
-    CloseOutlined
+    CloseOutlined,
+    FolderOutlined,
+    InboxOutlined,
+    UndoOutlined
 } from '@ant-design/icons';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
@@ -46,6 +49,7 @@ const SessionsOverviewPage = () => {
     const [editingSession, setEditingSession] = useState(null);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [studentsWithAnswers, setStudentsWithAnswers] = useState(new Set()); // Track students who failed deletion
+    const [showArchived, setShowArchived] = useState(false); // Toggle between active and archived lessons
     const [pagination, setPagination] = useState({
         current: 1,
         pageSize: 10,
@@ -146,11 +150,13 @@ const SessionsOverviewPage = () => {
         return allStudentIds;
     };
 
-    const fetchSessions = async (page = 1, pageSize = 10) => {
+    const fetchSessions = async (page = 1, pageSize = 10, archived = showArchived) => {
         setLoading(true);
         try {
-            const response = await sessionsApi.getAllSessions(page, pageSize);
-            console.log('Sessions API response:', response);
+            const response = archived 
+                ? await sessionsApi.getArchivedSessions(page, pageSize)
+                : await sessionsApi.getAllSessions(page, pageSize);
+            console.log(`${archived ? 'Archived' : 'Active'} Sessions API response:`, response);
             console.log('Sessions data:', response.items);
             if (response.items && response.items.length > 0) {
                 console.log('First session structure:', response.items[0]);
@@ -164,7 +170,7 @@ const SessionsOverviewPage = () => {
             }));
             setError(null);
         } catch (err) {
-            setError('Не вдалося завантажити уроки');
+            setError(`Не вдалося завантажити ${archived ? 'архівні' : 'активні'} уроки`);
             console.error('Error fetching sessions:', err);
         } finally {
             setLoading(false);
@@ -174,6 +180,11 @@ const SessionsOverviewPage = () => {
     useEffect(() => {
         fetchSessions();
     }, []);
+
+    // Refetch sessions when toggling between active/archived
+    useEffect(() => {
+        fetchSessions(1, pagination.pageSize, showArchived);
+    }, [showArchived]);
 
     const handleTableChange = (paginationInfo) => {
         fetchSessions(paginationInfo.current, paginationInfo.pageSize);
@@ -225,22 +236,45 @@ const SessionsOverviewPage = () => {
     const handleDeleteSession = async (sessionId) => {
         try {
             await sessionsApi.deleteSession(sessionId);
-            message.success('Урок видалено успішно! Дані збережено для звітності.');
+            message.success('Урок архівовано успішно! Дані збережено для звітності.');
             fetchSessions(pagination.current, pagination.pageSize);
         } catch (err) {
             console.error('Error deleting session:', err);
             
             // Provide more specific error messages
             if (err.message && err.message.includes('not be implemented')) {
-                message.error('Функція видалення уроків ще не реалізована на сервері. Зверніться до адміністратора.');
+                message.error('Функція архівування уроків ще не реалізована на сервері. Зверніться до адміністратора.');
             } else if (err.response?.status === 404) {
-                message.error('Урок не знайдено. Можливо, він вже був видалений.');
+                message.error('Урок не знайдено. Можливо, він вже був архівований.');
                 // Refresh the list in case the session was already deleted
                 fetchSessions(pagination.current, pagination.pageSize);
             } else if (err.response?.status === 500) {
-                message.error('Помилка сервера при видаленні уроку. Спробуйте пізніше або зверніться до адміністратора.');
+                message.error('Помилка сервера при архівуванні уроку. Спробуйте пізніше або зверніться до адміністратора.');
             } else {
-                message.error(`Не вдалося видалити урок: ${err.message || 'Невідома помилка'}`);
+                message.error(`Не вдалося архівувати урок: ${err.message || 'Невідома помилка'}`);
+            }
+        }
+    };
+
+    const handleRestoreSession = async (sessionId) => {
+        try {
+            await sessionsApi.restoreSession(sessionId);
+            message.success('Урок відновлено успішно!');
+            fetchSessions(pagination.current, pagination.pageSize);
+        } catch (err) {
+            console.error('Error restoring session:', err);
+            
+            // Provide more specific error messages
+            if (err.message && err.message.includes('not be implemented')) {
+                message.error('Функція відновлення уроків ще не реалізована на сервері. Зверніться до адміністратора.');
+            } else if (err.response?.status === 404) {
+                message.error('Архівний урок не знайдено.');
+                // Refresh the list in case something changed
+                fetchSessions(pagination.current, pagination.pageSize);
+            } else if (err.response?.status === 500) {
+                message.error('Помилка сервера при відновленні уроку. Спробуйте пізніше або зверніться до адміністратора.');
+            } else {
+                message.error(`Не вдалося відновити урок: ${err.message || 'Невідома помилка'}`);
             }
         }
     };
@@ -679,39 +713,56 @@ const SessionsOverviewPage = () => {
             key: 'actions',
             render: (_, record) => (
                 <Space>
-                    <Tooltip title="Почати урок">
-                        <Button 
-                            type="text" 
-                            icon={<PlayCircleOutlined />} 
-                            size="small"
-                            onClick={() => window.open(`/session/${record.id}`, '_blank')}
-                        />
-                    </Tooltip>
-                    <Tooltip title="Редагувати">
-                        <Button 
-                            type="text" 
-                            icon={<EditOutlined />} 
-                            size="small"
-                            onClick={() => handleEditSession(record)}
-                        />
-                    </Tooltip>
-                    <Popconfirm
-                        title="Видалити урок"
-                        description="Ви впевнені, що хочете видалити цей урок? Урок буде позначений як видалений, але дані збережуться для звітності."
-                        onConfirm={() => handleDeleteSession(record.id)}
-                        okText="Так"
-                        cancelText="Ні"
-                        okType="danger"
-                    >
-                        <Tooltip title="Видалити">
-                            <Button 
-                                type="text" 
-                                danger
-                                icon={<DeleteOutlined />} 
-                                size="small"
-                            />
-                        </Tooltip>
-                    </Popconfirm>
+                    {!showArchived ? (
+                        // Actions for active lessons
+                        <>
+                            <Tooltip title="Почати урок">
+                                <Button 
+                                    type="text" 
+                                    icon={<PlayCircleOutlined />} 
+                                    size="small"
+                                    onClick={() => window.open(`/session/${record.id}`, '_blank')}
+                                />
+                            </Tooltip>
+                            <Tooltip title="Редагувати">
+                                <Button 
+                                    type="text" 
+                                    icon={<EditOutlined />} 
+                                    size="small"
+                                    onClick={() => handleEditSession(record)}
+                                />
+                            </Tooltip>
+                            <Popconfirm
+                                title="Архівувати урок"
+                                description="Ви впевнені, що хочете архівувати цей урок? Урок буде позначений як видалений, але дані збережуться для звітності."
+                                onConfirm={() => handleDeleteSession(record.id)}
+                                okText="Так"
+                                cancelText="Ні"
+                                okType="danger"
+                            >
+                                <Tooltip title="Архівувати">
+                                    <Button 
+                                        type="text" 
+                                        danger
+                                        icon={<DeleteOutlined />} 
+                                        size="small"
+                                    />
+                                </Tooltip>
+                            </Popconfirm>
+                        </>
+                    ) : (
+                        // Actions for archived lessons
+                        <>
+                            <Tooltip title="Відновити урок">
+                                <Button 
+                                    type="text" 
+                                    icon={<UndoOutlined />} 
+                                    size="small"
+                                    onClick={() => handleRestoreSession(record.id)}
+                                />
+                            </Tooltip>
+                        </>
+                    )}
                 </Space>
             ),
         },
@@ -1204,19 +1255,33 @@ const SessionsOverviewPage = () => {
             <Spin spinning={userData.status === 'loading' || loading} delay={500}>
                 <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <Title level={2}>Уроки</Title>
+                        <Title level={2}>
+                            {showArchived ? 'Архівні уроки' : 'Уроки'}
+                        </Title>
                         <Text type="secondary">
-                            Перегляд всіх створених уроків
+                            {showArchived 
+                                ? 'Перегляд архівованих уроків'
+                                : 'Перегляд всіх активних уроків'
+                            }
                         </Text>
                     </div>
                     <Space>
                         <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={handleAddSession}
+                            icon={showArchived ? <InboxOutlined /> : <FolderOutlined />}
+                            onClick={() => setShowArchived(!showArchived)}
+                            type={showArchived ? "default" : "dashed"}
                         >
-                            Створити урок
+                            {showArchived ? 'Показати активні' : 'Показати архівні'}
                         </Button>
+                        {!showArchived && (
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={handleAddSession}
+                            >
+                                Створити урок
+                            </Button>
+                        )}
                     </Space>
                 </div>
 
@@ -1229,7 +1294,7 @@ const SessionsOverviewPage = () => {
                         onChange={handleTableChange}
                         loading={loading}
                         locale={{
-                            emptyText: <Empty description="Уроки не знайдено" />
+                            emptyText: <Empty description={showArchived ? "Архівні уроки не знайдено" : "Уроки не знайдено"} />
                         }}
                         size="middle"
                     />

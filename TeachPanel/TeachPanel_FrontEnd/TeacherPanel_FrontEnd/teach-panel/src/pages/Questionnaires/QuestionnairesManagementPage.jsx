@@ -345,11 +345,11 @@ const QuestionnairesManagementPage = () => {
                         expandedRowRender: (record) => {
                             const questions = record.questions || [];
                             if (questions.length === 0) {
-                                return <div style={{ padding: '16px', color: '#999' }}>Немає питань</div>;
+                                return <div style={{ padding: '16px', color: 'var(--text-secondary)' }}>Немає питань</div>;
                             }
                             
                             return (
-                                <div style={{ padding: '16px', backgroundColor: '#fafafa' }}>
+                                <div style={{ padding: '16px', backgroundColor: 'var(--bg-secondary)' }}>
                                     <Text strong style={{ display: 'block', marginBottom: '12px' }}>
                                         Питання ({questions.length}):
                                     </Text>
@@ -357,8 +357,8 @@ const QuestionnairesManagementPage = () => {
                                         <div key={index} style={{ 
                                             padding: '8px 12px', 
                                             marginBottom: '8px', 
-                                            backgroundColor: 'white',
-                                            border: '1px solid #e8e8e8',
+                                            backgroundColor: 'var(--card-bg)',
+                                            border: '1px solid var(--border-color)',
                                             borderRadius: '4px'
                                         }}>
                                             <div style={{ marginBottom: '4px' }}>

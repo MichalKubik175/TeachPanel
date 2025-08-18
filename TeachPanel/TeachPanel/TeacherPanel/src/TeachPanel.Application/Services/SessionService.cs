@@ -134,6 +134,39 @@ public sealed class SessionService : ISessionService
         };
     }
 
+    public async Task<PagingResponse<SessionModel>> GetArchivedAsync(PagingRequest request)
+    {
+        var currentUserId = _securityContext.GetUserIdOrThrow();
+        var pageFilter = new PageFilter<Session>
+        {
+            PageNumber = request.Page,
+            PageSize = request.PageSize
+        };
+
+        var query = _context.Sessions
+            .Include(s => s.User)
+            .Include(s => s.Questionnaire)
+                .ThenInclude(q => q.Questions)
+            .Include(s => s.TableLayout)
+            .Include(s => s.Commentary)
+            .Include(s => s.SessionHomeworkStudents)
+                .ThenInclude(shs => shs.Student)
+            .Include(s => s.SessionRegularStudents)
+                .ThenInclude(srs => srs.Student)
+            .Where(s => s.UserId == currentUserId && s.IsDeleted)
+            .AsQueryable();
+
+        var page = await pageFilter.ApplyToQueryable(query);
+        
+        var sessions = page.Items.Select(x => x.ToSessionModel()).ToArray();
+
+        return new PagingResponse<SessionModel>
+        {
+            Items = sessions,
+            Meta = new PageMetadataModel(page.PageCount, page.PageNumber, page.ItemsCount)
+        };
+    }
+
     public async Task<SessionModel> UpdateAsync(Guid id, UpdateSessionRequest request)
     {
         _validatorFactory.ValidateAndThrow(request);
@@ -196,6 +229,21 @@ public sealed class SessionService : ISessionService
         }
 
         session.MarkAsDeleted();
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RestoreAsync(Guid id)
+    {
+        var currentUserId = _securityContext.GetUserIdOrThrow();
+        var session = await _context.Sessions
+            .FirstOrDefaultAsync(s => s.Id == id && s.UserId == currentUserId && s.IsDeleted);
+
+        if (session is null)
+        {
+            throw new ResourceNotFoundException($"Archived session with id {id} not found");
+        }
+
+        session.IsDeleted = false;
         await _context.SaveChangesAsync();
     }
 

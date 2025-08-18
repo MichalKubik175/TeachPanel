@@ -13,18 +13,14 @@ import {
     Button, 
     Tag,
     Avatar,
-    Empty,
-    Divider
+    Empty
 } from 'antd';
 import {
     UserOutlined,
     TeamOutlined,
     BookOutlined,
     TrophyOutlined,
-    PlusOutlined,
     BarChartOutlined,
-    SettingOutlined,
-    FileTextOutlined,
     PlayCircleOutlined,
     CheckCircleOutlined,
     ClockCircleOutlined
@@ -119,9 +115,9 @@ const HomePage = () => {
             });
         });
 
-        // Sort by time (newest first) and take top 6
+        // Sort by time (newest first) and take top 5
         activities.sort((a, b) => b.time - a.time);
-        setRecentActivities(activities.slice(0, 6));
+        setRecentActivities(activities.slice(0, 5));
     }, [sessions, students, groups, navigate]);
 
     // Calculate statistics
@@ -376,43 +372,6 @@ const HomePage = () => {
                     </Card>
                 </Col>
             </Row>
-
-            {/* Quick Actions */}
-            <Divider />
-            <div style={{ textAlign: 'center', marginTop: '24px' }}>
-                <Title level={4}>Швидкі дії</Title>
-                <Space size="large" wrap>
-                    <Button 
-                        type="primary" 
-                        icon={<PlusOutlined />} 
-                        size="large"
-                        onClick={() => navigate('/?tab=sessions')}
-                    >
-                        Новий урок
-                    </Button>
-                    <Button 
-                        icon={<TeamOutlined />} 
-                        size="large"
-                        onClick={() => navigate('/?tab=students')}
-                    >
-                        Нова група
-                    </Button>
-                    <Button 
-                        icon={<FileTextOutlined />} 
-                        size="large"
-                        onClick={() => navigate('/?tab=questionnaires')}
-                    >
-                        Нове опитування
-                    </Button>
-                    <Button 
-                        icon={<SettingOutlined />} 
-                        size="large"
-                        onClick={() => navigate('/settings')}
-                    >
-                        Налаштування
-                    </Button>
-                </Space>
-            </div>
         </div>
     );
 };

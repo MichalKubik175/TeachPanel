@@ -8,7 +8,9 @@ public interface ISessionService
     Task<SessionModel> CreateAsync(CreateSessionRequest request);
     Task<SessionModel?> GetByIdAsync(Guid id);
     Task<PagingResponse<SessionModel>> GetAllAsync(PagingRequest request);
+    Task<PagingResponse<SessionModel>> GetArchivedAsync(PagingRequest request);
     Task<SessionModel> UpdateAsync(Guid id, UpdateSessionRequest request);
     Task DeleteAsync(Guid id);
+    Task RestoreAsync(Guid id);
     Task<IEnumerable<StudentWithAnswersModel>> GetStudentsWithAnswersAsync(Guid sessionId);
 } 
