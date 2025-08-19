@@ -839,17 +839,6 @@ const SessionsOverviewPage = () => {
 
                 {/* Groups Selection with Student Lists */}
                 <Divider orientation="left">Оберіть групи</Divider>
-                {/* Debug: Show groups data */}
-                <div style={{ padding: '8px', backgroundColor: '#f0f0f0', marginBottom: '16px', fontSize: '12px' }}>
-                  <strong>Debug Info:</strong><br/>
-                  Groups count: {groups.length}<br/>
-                  Groups: {JSON.stringify(groups.map(g => ({ id: g.id, name: g.name })), null, 2)}<br/>
-                  Students count: {allStudents.length}<br/>
-                  GroupIdToStudents: {JSON.stringify(Object.keys(groupIdToStudents).map(key => ({ 
-                    groupId: key, 
-                    studentCount: groupIdToStudents[key]?.length || 0 
-                  })), null, 2)}
-                </div>
                 {groups.length === 0 ? (
                     <Empty description="Немає груп" />
                 ) : (

@@ -365,6 +365,11 @@ body {
 /* List theme overrides */
 .ant-list-item {
   border-bottom-color: var(--border-secondary) !important;
+  background-color: var(--card-bg) !important;
+}
+
+.ant-list-item-meta {
+  background-color: var(--card-bg) !important;
 }
 
 .ant-list-item-meta-title {
