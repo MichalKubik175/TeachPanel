@@ -22,3 +22,4 @@ public sealed class CreateStudentVisitRequestValidator : AbstractValidator<Creat
             .WithMessage("Notes cannot exceed 500 characters");
     }
 }
+

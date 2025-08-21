@@ -10,3 +10,4 @@ public sealed class GetVisitsRequest : PagingRequest
     public Guid? StudentId { get; set; }
     public bool? IsPresent { get; set; }
 }
+

@@ -35,3 +35,4 @@ public sealed class StudentVisit : AuditEntity<Guid>
         Notes = notes;
     }
 }
+

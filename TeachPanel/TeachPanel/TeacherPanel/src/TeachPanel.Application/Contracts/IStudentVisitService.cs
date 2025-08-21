@@ -14,3 +14,4 @@ public interface IStudentVisitService
     Task<List<GroupVisitSummaryModel>> GetGroupVisitSummariesAsync(DateOnly? fromDate = null, DateOnly? toDate = null);
     Task<GroupVisitSummaryModel> GetGroupVisitSummaryAsync(Guid groupId, DateOnly visitDate);
 }
+

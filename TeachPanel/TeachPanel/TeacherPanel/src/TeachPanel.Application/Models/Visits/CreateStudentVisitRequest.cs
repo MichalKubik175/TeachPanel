@@ -7,3 +7,4 @@ public sealed class CreateStudentVisitRequest
     public bool IsPresent { get; set; }
     public string? Notes { get; set; }
 }
+

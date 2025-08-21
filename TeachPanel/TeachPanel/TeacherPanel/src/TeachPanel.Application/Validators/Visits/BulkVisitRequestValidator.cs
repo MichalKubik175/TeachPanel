@@ -30,3 +30,4 @@ public sealed class BulkVisitRequestValidator : AbstractValidator<BulkVisitReque
             .WithMessage("Notes cannot exceed 500 characters");
     }
 }
+

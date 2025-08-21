@@ -9,3 +9,4 @@ public sealed class BulkVisitRequest
     public List<Guid>? ExcludedStudentIds { get; set; }
     public string? Notes { get; set; }
 }
+

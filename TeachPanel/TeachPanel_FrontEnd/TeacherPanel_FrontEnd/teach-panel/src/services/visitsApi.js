@@ -60,3 +60,4 @@ export const visitsApi = {
     return response.data;
   }
 };
+

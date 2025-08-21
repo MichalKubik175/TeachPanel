@@ -12,3 +12,4 @@ public sealed class StudentVisitModel
     public string? Notes { get; set; }
     public DateTimeOffset CreatedAtUtc { get; set; }
 }
+

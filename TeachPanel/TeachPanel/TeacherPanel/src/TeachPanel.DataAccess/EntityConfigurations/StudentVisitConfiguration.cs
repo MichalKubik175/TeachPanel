@@ -43,3 +43,4 @@ public sealed class StudentVisitConfiguration : AuditEntityBaseConfiguration<Stu
             .HasDatabaseName("ix_student_visits_student_date_user");
     }
 }
+

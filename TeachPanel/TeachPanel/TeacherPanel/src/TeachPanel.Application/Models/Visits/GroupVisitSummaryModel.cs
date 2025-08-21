@@ -13,3 +13,4 @@ public sealed class GroupVisitSummaryModel
     public double AttendancePercentage { get; set; }
     public List<StudentVisitModel> StudentVisits { get; set; } = new();
 }
+
