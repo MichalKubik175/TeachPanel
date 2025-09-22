@@ -210,7 +210,8 @@ public sealed class SessionService : ISessionService
             request.QuestionnaireId, 
             request.CommentaryId,
             request.CurrentSelectedQuestionId,
-            request.CurrentSelectedSessionStudentId);
+            request.CurrentSelectedSessionStudentId,
+            request.CurrentQuestionNumber);
 
         await _context.SaveChangesAsync();
 

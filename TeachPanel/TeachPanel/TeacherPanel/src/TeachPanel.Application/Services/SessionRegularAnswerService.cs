@@ -31,7 +31,7 @@ public sealed class SessionRegularAnswerService : ISessionRegularAnswerService
         if (srs is null)
             throw new ResourceNotFoundException($"SessionRegularStudent with id {request.SessionRegularStudentId} not found");
 
-        var answer = SessionRegularAnswer.Create(request.SessionRegularStudentId, request.State);
+        var answer = SessionRegularAnswer.Create(request.SessionRegularStudentId, request.QuestionNumber, request.State);
         _context.SessionRegularAnswers.Add(answer);
         await _context.SaveChangesAsync();
         return answer.ToSessionRegularAnswerModel();
@@ -75,7 +75,7 @@ public sealed class SessionRegularAnswerService : ISessionRegularAnswerService
             .FirstOrDefaultAsync(a => a.Id == id && a.SessionRegularStudent.UserId == currentUserId);
         if (answer == null)
             throw new ResourceNotFoundException($"SessionRegularAnswer with id {id} not found");
-        answer.Update(request.State);
+        answer.Update(request.QuestionNumber, request.State);
         await _context.SaveChangesAsync();
         return answer.ToSessionRegularAnswerModel();
     }

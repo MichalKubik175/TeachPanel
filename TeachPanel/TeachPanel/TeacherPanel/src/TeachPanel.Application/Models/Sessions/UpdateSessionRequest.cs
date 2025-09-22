@@ -10,4 +10,5 @@ public sealed class UpdateSessionRequest
     public Guid? CommentaryId { get; set; }
     public Guid? CurrentSelectedQuestionId { get; set; }
     public Guid? CurrentSelectedSessionStudentId { get; set; }
+    public int? CurrentQuestionNumber { get; set; }
 } 

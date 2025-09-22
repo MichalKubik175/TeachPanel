@@ -23,6 +23,7 @@ public sealed class SessionModel
     public CommentaryModel? Commentary { get; set; }
     public Guid? CurrentSelectedQuestionId { get; set; }
     public Guid? CurrentSelectedSessionStudentId { get; set; }
+    public int? CurrentQuestionNumber { get; set; }
     public DateTimeOffset CreatedAtLocal { get; set; }
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? UpdatedAtUtc { get; set; }

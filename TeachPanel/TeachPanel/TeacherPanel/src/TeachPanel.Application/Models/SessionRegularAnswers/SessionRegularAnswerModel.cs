@@ -8,6 +8,7 @@ public sealed class SessionRegularAnswerModel
     public Guid Id { get; set; }
     public Guid SessionRegularStudentId { get; set; }
     public SessionRegularStudentModel? SessionRegularStudent { get; set; }
+    public int QuestionNumber { get; set; }
     public SessionRegularAnswerState State { get; set; }
     public DateTimeOffset CreatedAtLocal { get; set; }
     public DateTime CreatedAtUtc { get; set; }

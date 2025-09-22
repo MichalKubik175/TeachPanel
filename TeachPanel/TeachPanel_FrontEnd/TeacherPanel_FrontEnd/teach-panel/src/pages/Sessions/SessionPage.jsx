@@ -50,6 +50,14 @@ const SessionPage = () => {
     const [studentAnswers, setStudentAnswers] = useState({}); // { studentId: { questionId: { id, state, score } } }
     const studentAnswersRef = useRef(studentAnswers);
     
+    // Regular state specific
+    const [regularStudentAnswers, setRegularStudentAnswers] = useState({}); // { studentId: [{ questionNumber, state, score, id }] }
+    const [currentQuestionNumber, setCurrentQuestionNumber] = useState(1);
+    const [selectedAnswer, setSelectedAnswer] = useState(null); // Selected answer for editing
+    const regularStudentAnswersRef = useRef(regularStudentAnswers);
+    
+    const [loadingAnswers, setLoadingAnswers] = useState(false);
+    
     // Keep ref in sync with state
     useEffect(() => {
         studentAnswersRef.current = studentAnswers;
@@ -57,12 +65,14 @@ const SessionPage = () => {
         console.log('New studentAnswers state:', studentAnswers);
         console.log('Number of students with answers:', Object.keys(studentAnswers).length);
     }, [studentAnswers]);
-    const [loadingAnswers, setLoadingAnswers] = useState(false);
-
-    // Regular state specific
-    const [regularStudentAnswers, setRegularStudentAnswers] = useState({}); // { studentId: [{ questionNumber, state, score, id }] }
-    const [nextQuestionNumber, setNextQuestionNumber] = useState(1);
-    const [selectedAnswer, setSelectedAnswer] = useState(null); // Selected answer for editing
+    
+    // Keep regular answers ref in sync with state
+    useEffect(() => {
+        regularStudentAnswersRef.current = regularStudentAnswers;
+        console.log('=== REGULAR STUDENT ANSWERS STATE CHANGED ===');
+        console.log('New regularStudentAnswers state:', regularStudentAnswers);
+        console.log('Number of students with regular answers:', Object.keys(regularStudentAnswers).length);
+    }, [regularStudentAnswers]);
 
     // Generate table structure from table layout
     const tableStructure = useMemo(() => {
@@ -199,6 +209,9 @@ const SessionPage = () => {
 
         event.preventDefault();
         console.log('Calling answer score handler with state:', newState);
+        console.log('Current question number at keypress:', currentQuestionNumber);
+        console.log('Regular student answers at keypress:', regularStudentAnswers);
+        console.log('Regular student answers ref at keypress:', regularStudentAnswersRef.current);
         
         if (currentState === 'Homework') {
             handleHomeworkAnswerScore(newState);
@@ -209,10 +222,11 @@ const SessionPage = () => {
                 handleEditRegularAnswer(selectedAnswer, newState);
             } else {
                 // Create new answer if no answer is selected
+                console.log('Creating/updating regular answer for current question');
                 handleRegularAnswerScore(newState);
             }
         }
-    }, [currentState, selectedQuestion, selectedStudent, selectedAnswer]);
+    }, [currentState, selectedQuestion, selectedStudent, selectedAnswer, currentQuestionNumber, regularStudentAnswers]);
 
     // Clear selected answer when student changes
     useEffect(() => {
@@ -377,12 +391,41 @@ const SessionPage = () => {
     const handleRegularAnswerScore = async (state) => {
         if (!selectedStudent) return;
 
+        // Prevent rapid successive calls
+        if (loadingAnswers) {
+            console.log('Already processing answer, ignoring duplicate call');
+            return;
+        }
+
         try {
             setLoadingAnswers(true);
             
-            // For Regular session, we create a new question each time
-            const questionNumber = nextQuestionNumber;
+            // Use current question number instead of auto-incrementing
+            const questionNumber = currentQuestionNumber;
             
+            console.log('=== REGULAR ANSWER SCORE DEBUG ===');
+            console.log('Selected student:', selectedStudent.student?.fullName, 'ID:', selectedStudent.id);
+            console.log('Current question number:', questionNumber);
+            console.log('New state:', state);
+            
+            // Get the most current state to avoid race conditions
+            const currentAnswersState = regularStudentAnswersRef.current;
+            const currentStudentAnswers = currentAnswersState[selectedStudent.id] || [];
+            console.log('Current student answers from ref:', currentStudentAnswers);
+            console.log('Current answers state from ref:', currentAnswersState);
+            
+            // Check if student already has an answer for this question
+            const existingAnswer = currentStudentAnswers.find(answer => answer.questionNumber === questionNumber);
+            console.log('Existing answer for question', questionNumber, ':', existingAnswer);
+            
+            if (existingAnswer) {
+                console.log('Updating existing answer:', existingAnswer.id);
+                // Update existing answer instead of creating new one
+                await handleEditRegularAnswer(existingAnswer, state);
+                return;
+            }
+            
+            console.log('Creating new answer for question', questionNumber);
             // Create new answer
             const createdAnswer = await sessionRegularAnswersApi.createSessionRegularAnswer({
                 sessionRegularStudentId: selectedStudent.id,
@@ -390,8 +433,11 @@ const SessionPage = () => {
                 state: state
             });
             
+            console.log('Answer created successfully:', createdAnswer);
+            
             // Update local state
             setRegularStudentAnswers(prev => {
+                console.log('Updating local state. Previous state:', prev);
                 const studentAnswers = prev[selectedStudent.id] || [];
                 const newAnswer = {
                     id: createdAnswer.id,
@@ -400,14 +446,13 @@ const SessionPage = () => {
                     score: getAnswerStateInfo(state).score
                 };
                 
-                return {
+                const newState = {
                     ...prev,
                     [selectedStudent.id]: [...studentAnswers, newAnswer]
                 };
+                console.log('New local state:', newState);
+                return newState;
             });
-            
-            // Increment question number for next answer
-            setNextQuestionNumber(prev => prev + 1);
 
             const stateInfo = getAnswerStateInfo(state);
             message.success(`${selectedStudent.student?.fullName}: Питання №${questionNumber} - ${stateInfo.text} (${stateInfo.score} балів)`);
@@ -422,13 +467,16 @@ const SessionPage = () => {
 
     // Edit regular answer
     const handleEditRegularAnswer = async (answer, newState) => {
+        console.log('=== EDIT REGULAR ANSWER DEBUG ===');
         console.log('handleEditRegularAnswer called:', { answer, newState });
+        console.log('Selected student:', selectedStudent?.student?.fullName, 'ID:', selectedStudent?.id);
         
         if (!selectedStudent) return;
 
         try {
             setLoadingAnswers(true);
             
+            console.log('Updating answer on backend:', answer.id);
             // Update answer on backend
             await sessionRegularAnswersApi.updateSessionRegularAnswer(answer.id, {
                 sessionRegularStudentId: selectedStudent.id,
@@ -436,23 +484,34 @@ const SessionPage = () => {
                 state: newState
             });
             
+            console.log('Backend update successful, updating local state');
             // Update local state
             setRegularStudentAnswers(prev => {
+                console.log('Previous local state before update:', prev);
                 const studentAnswers = prev[selectedStudent.id] || [];
-                const updatedAnswers = studentAnswers.map(ans => 
-                    ans.id === answer.id 
-                        ? { ...ans, state: newState, score: getAnswerStateInfo(newState).score }
-                        : ans
-                );
+                console.log('Student answers before update:', studentAnswers);
                 
-                return {
+                const updatedAnswers = studentAnswers.map(ans => {
+                    if (ans.id === answer.id) {
+                        const updatedAnswer = { ...ans, state: newState, score: getAnswerStateInfo(newState).score };
+                        console.log('Updated answer:', updatedAnswer);
+                        return updatedAnswer;
+                    }
+                    return ans;
+                });
+                
+                console.log('Student answers after update:', updatedAnswers);
+                
+                const newLocalState = {
                     ...prev,
                     [selectedStudent.id]: updatedAnswers
                 };
+                console.log('New local state after update:', newLocalState);
+                return newLocalState;
             });
 
             const stateInfo = getAnswerStateInfo(newState);
-            message.success(`Відповідь оновлено: ${stateInfo.text} (${stateInfo.score} балів)`);
+            message.success(`${selectedStudent.student?.fullName}: Питання №${answer.questionNumber} оновлено - ${stateInfo.text} (${stateInfo.score} балів)`);
             
         } catch (error) {
             console.error('Error updating regular answer:', error);
@@ -495,6 +554,62 @@ const SessionPage = () => {
         }
     };
 
+    // Get current question answer for a student
+    const getCurrentQuestionAnswer = useCallback((studentId, questionNumber) => {
+        const studentAnswers = regularStudentAnswers[studentId] || [];
+        return studentAnswers.find(answer => answer.questionNumber === questionNumber);
+    }, [regularStudentAnswers]);
+
+    // Save current question number to session
+    const saveCurrentQuestionNumber = async (questionNumber) => {
+        try {
+            console.log('=== SAVING CURRENT QUESTION NUMBER ===');
+            console.log('Question number to save:', questionNumber);
+            console.log('Session ID:', session.id);
+            console.log('Full session object:', session);
+            
+            const updateData = {
+                ...session,
+                currentQuestionNumber: questionNumber
+            };
+            console.log('Update data being sent:', updateData);
+            
+            await sessionsApi.updateSession(session.id, updateData);
+            console.log('Current question number saved successfully to database');
+        } catch (error) {
+            console.error('Error saving current question number:', error);
+            console.error('Error details:', error.response?.data);
+            // Don't show error to user as this is not critical functionality
+        }
+    };
+
+    // Handle next question
+    const handleNextQuestion = async () => {
+        const newQuestionNumber = currentQuestionNumber + 1;
+        console.log('=== NEXT QUESTION DEBUG ===');
+        console.log('Current question number:', currentQuestionNumber);
+        console.log('New question number:', newQuestionNumber);
+        console.log('Current regularStudentAnswers state:', regularStudentAnswers);
+        console.log('Current regularStudentAnswers ref:', regularStudentAnswersRef.current);
+        
+        setCurrentQuestionNumber(newQuestionNumber);
+        setSelectedAnswer(null);
+        
+        // Save the new question number to the database
+        if (session) {
+            await saveCurrentQuestionNumber(newQuestionNumber);
+        }
+        
+        message.success(`Перехід до питання №${newQuestionNumber}`);
+        
+        // Log state after update (will be async)
+        setTimeout(() => {
+            console.log('After question change - Current question number:', currentQuestionNumber);
+            console.log('After question change - regularStudentAnswers state:', regularStudentAnswers);
+            console.log('After question change - regularStudentAnswers ref:', regularStudentAnswersRef.current);
+        }, 100);
+    };
+
     useEffect(() => {
         const fetchSession = async () => {
             setLoading(true);
@@ -509,6 +624,19 @@ const SessionPage = () => {
                     setCurrentState('Homework');
                 } else {
                     setCurrentState('Regular');
+                    
+                    // Load saved current question number for regular sessions
+                    console.log('=== SESSION LOADING DEBUG ===');
+                    console.log('sessionData.currentQuestionNumber:', sessionData.currentQuestionNumber);
+                    console.log('Type:', typeof sessionData.currentQuestionNumber);
+                    
+                    if (sessionData.currentQuestionNumber && sessionData.currentQuestionNumber > 0) {
+                        console.log('Loading saved current question number:', sessionData.currentQuestionNumber);
+                        setCurrentQuestionNumber(sessionData.currentQuestionNumber);
+                    } else {
+                        console.log('No saved question number found, starting with question 1');
+                        setCurrentQuestionNumber(1);
+                    }
                 }
             } catch (err) {
                 console.error('Error fetching session:', err);
@@ -705,7 +833,30 @@ const SessionPage = () => {
                     
                     console.log('Final processed regular answers:', answers);
                     setRegularStudentAnswers(answers);
-                    setNextQuestionNumber(maxQuestionNumber + 1);
+                    
+                    // Only set current question number from answers if no saved question number exists in session
+                    console.log('=== ANSWERS LOADING DEBUG ===');
+                    console.log('session.currentQuestionNumber:', session.currentQuestionNumber);
+                    console.log('Type:', typeof session.currentQuestionNumber);
+                    console.log('maxQuestionNumber from answers:', maxQuestionNumber);
+                    console.log('Current currentQuestionNumber state:', currentQuestionNumber);
+                    
+                    if (!session.currentQuestionNumber || session.currentQuestionNumber <= 0) {
+                        console.log('No saved question number in session, using max from answers:', maxQuestionNumber);
+                        setCurrentQuestionNumber(maxQuestionNumber > 0 ? maxQuestionNumber : 1);
+                    } else {
+                        console.log('Session has saved question number:', session.currentQuestionNumber);
+                        // Force set the saved question number to ensure it overrides any previous state
+                        console.log('Force setting currentQuestionNumber to saved value:', session.currentQuestionNumber);
+                        setCurrentQuestionNumber(session.currentQuestionNumber);
+                        
+                        // Debug: Check if the current question number state is correct
+                        setTimeout(() => {
+                            console.log('=== FINAL STATE CHECK ===');
+                            console.log('currentQuestionNumber state after loading:', currentQuestionNumber);
+                            console.log('Should be:', session.currentQuestionNumber);
+                        }, 500);
+                    }
                 } else {
                     console.log('No regular answers found in response');
                 }
@@ -967,14 +1118,23 @@ const SessionPage = () => {
                     {studentsAtTable.length > 0 ? (
                         <Space direction="vertical" size="small" style={{ width: '100%' }}>
                                                     {studentsAtTable.map(sessionStudent => {
+                            // For homework mode
                             const studentAnswerForQuestion = selectedQuestion ? 
                                 studentAnswers[sessionStudent.id]?.[selectedQuestion.id] : null;
-                            const answerStateInfo = studentAnswerForQuestion ? 
-                                getAnswerStateInfo(studentAnswerForQuestion.state) : 
-                                getAnswerStateInfo(0);
+                            
+                            // For regular mode - check if student has answer for current question
+                            const currentQuestionAnswer = getCurrentQuestionAnswer(sessionStudent.id, currentQuestionNumber);
+                            
+                            const answerStateInfo = currentState === 'Homework' 
+                                ? (studentAnswerForQuestion ? 
+                                    getAnswerStateInfo(studentAnswerForQuestion.state) : 
+                                    getAnswerStateInfo(0))
+                                : (currentQuestionAnswer ?
+                                    getAnswerStateInfo(currentQuestionAnswer.state) :
+                                    getAnswerStateInfo(0));
                                 
                             // Debug logging for each student
-                            if (selectedQuestion) {
+                            if (selectedQuestion && currentState === 'Homework') {
                                 console.log(`Student ${sessionStudent.student?.fullName} (${sessionStudent.id}) for question ${selectedQuestion.id}:`, {
                                     studentAnswerForQuestion,
                                     answerStateInfo,
@@ -1013,7 +1173,8 @@ const SessionPage = () => {
                                     >
                                         <Space>
                                             <DragOutlined style={{ color: '#999' }} />
-                                            {currentState === 'Homework' && selectedQuestion && (
+                                            {((currentState === 'Homework' && selectedQuestion) || 
+                                              (currentState === 'Regular')) && (
                                                 <div style={{ color: answerStateInfo.color }}>
                                                     {answerStateInfo.icon}
                                                 </div>
@@ -1153,14 +1314,23 @@ const SessionPage = () => {
                                     <Card title="Не призначені студенти">
                                         <Row gutter={[8, 8]}>
                                                                                     {currentUnassigned.map(sessionStudent => {
+                                            // For homework mode
                                             const studentAnswerForQuestion = selectedQuestion ? 
                                                 studentAnswers[sessionStudent.id]?.[selectedQuestion.id] : null;
-                                            const answerStateInfo = studentAnswerForQuestion ? 
-                                                getAnswerStateInfo(studentAnswerForQuestion.state) : 
-                                                getAnswerStateInfo(0);
+                                            
+                                            // For regular mode - check if student has answer for current question
+                                            const currentQuestionAnswer = getCurrentQuestionAnswer(sessionStudent.id, currentQuestionNumber);
+                                            
+                                            const answerStateInfo = currentState === 'Homework' 
+                                                ? (studentAnswerForQuestion ? 
+                                                    getAnswerStateInfo(studentAnswerForQuestion.state) : 
+                                                    getAnswerStateInfo(0))
+                                                : (currentQuestionAnswer ?
+                                                    getAnswerStateInfo(currentQuestionAnswer.state) :
+                                                    getAnswerStateInfo(0));
                                                 
                                             // Debug logging for unassigned students
-                                            if (selectedQuestion) {
+                                            if (selectedQuestion && currentState === 'Homework') {
                                                 console.log(`Unassigned student ${sessionStudent.student?.fullName} (${sessionStudent.id}) for question ${selectedQuestion.id}:`, {
                                                     studentAnswerForQuestion,
                                                     answerStateInfo,
@@ -1190,7 +1360,8 @@ const SessionPage = () => {
                                                                 }}
                                                             >
                                                                 <DragOutlined />
-                                                                {selectedQuestion && (
+                                                                {((currentState === 'Homework' && selectedQuestion) || 
+                                                                  (currentState === 'Regular')) && (
                                                                     <div style={{ color: answerStateInfo.color }}>
                                                                         {answerStateInfo.icon}
                                                                     </div>
@@ -1301,9 +1472,21 @@ const SessionPage = () => {
                                             Обрана відповідь: Питання #{selectedAnswer.questionNumber} ({getAnswerStateInfo(selectedAnswer.state).text})
                                         </Text>
                                     ) : (
-                                        <Text type="secondary">
-                                            Наступне питання: №{nextQuestionNumber}
-                                        </Text>
+                                        <div>
+                                            <Text type="secondary">
+                                                Поточне питання: №{currentQuestionNumber}
+                                            </Text>
+                                            <br />
+                                            <Text type="secondary" style={{ fontSize: '12px' }}>
+                                                Відповіли: {Object.values(regularStudentAnswers).filter(answers => 
+                                                    answers.some(answer => answer.questionNumber === currentQuestionNumber)
+                                                ).length} з {currentStudents.length} студентів
+                                            </Text>
+                                            <br />
+                                            <Text type="secondary" style={{ fontSize: '11px', color: '#999' }}>
+                                                💾 Поточне питання автоматично зберігається
+                                            </Text>
+                                        </div>
                                     )}
                                     <Space wrap>
                                         <Tag color="green">F1 - Добре (1 бал)</Tag>
@@ -1325,6 +1508,34 @@ const SessionPage = () => {
                                             💡 Натисніть F1, F2 або F3 для додавання нової відповіді
                                         </Text>
                                     )}
+                                    <Space>
+                                        <Button
+                                            type="primary"
+                                            size="large"
+                                            onClick={handleNextQuestion}
+                                            style={{ marginTop: '12px' }}
+                                        >
+                                            Наступне питання (№{currentQuestionNumber + 1})
+                                        </Button>
+                                        {currentQuestionNumber > 1 && (
+                                            <Button
+                                                type="default"
+                                                size="large"
+                                                onClick={async () => {
+                                                    const prevQuestion = currentQuestionNumber - 1;
+                                                    setCurrentQuestionNumber(prevQuestion);
+                                                    setSelectedAnswer(null);
+                                                    if (session) {
+                                                        await saveCurrentQuestionNumber(prevQuestion);
+                                                    }
+                                                    message.success(`Повернення до питання №${prevQuestion}`);
+                                                }}
+                                                style={{ marginTop: '12px' }}
+                                            >
+                                                Попереднє питання (№{currentQuestionNumber - 1})
+                                            </Button>
+                                        )}
+                                    </Space>
                                 </Space>
                             </Card>
 

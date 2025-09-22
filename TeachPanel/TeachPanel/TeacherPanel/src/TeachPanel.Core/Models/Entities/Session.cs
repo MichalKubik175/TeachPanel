@@ -21,6 +21,7 @@ public sealed class Session : AuditEntity<Guid>
     public Commentary? Commentary { get; set; }
     public Guid? CurrentSelectedQuestionId { get; set; }
     public Guid? CurrentSelectedSessionStudentId { get; set; }
+    public int? CurrentQuestionNumber { get; set; }
     public DateTimeOffset CreatedAtLocal { get; set; }
     public bool IsDeleted { get; set; }
     
@@ -43,7 +44,7 @@ public sealed class Session : AuditEntity<Guid>
         return session;
     }
 
-    public void Update(string name, SessionState state, Guid? questionnaireId, Guid? commentaryId, Guid? currentSelectedQuestionId, Guid? currentSelectedSessionStudentId)
+    public void Update(string name, SessionState state, Guid? questionnaireId, Guid? commentaryId, Guid? currentSelectedQuestionId, Guid? currentSelectedSessionStudentId, int? currentQuestionNumber = null)
     {
         Name = name;
         State = state;
@@ -51,6 +52,7 @@ public sealed class Session : AuditEntity<Guid>
         CommentaryId = commentaryId;
         CurrentSelectedQuestionId = currentSelectedQuestionId;
         CurrentSelectedSessionStudentId = currentSelectedSessionStudentId;
+        CurrentQuestionNumber = currentQuestionNumber;
     }
 
     public void MarkAsDeleted()
